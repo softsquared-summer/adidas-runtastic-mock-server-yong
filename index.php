@@ -2,6 +2,8 @@
 require './pdos/DatabasePdo.php';
 require './pdos/IndexPdo.php';
 require './vendor/autoload.php';
+require './controllers/myFunction.php';
+require './controllers/validationFunction.php';
 
 use \Monolog\Logger as Logger;
 use Monolog\Handler\StreamHandler;
@@ -14,15 +16,16 @@ ini_set('default_charset', 'utf8mb4');
 
 //Main Server API
 $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) {
-    /* ******************   Test   ****************** */
-    $r->addRoute('GET', '/', ['IndexController', 'index']);
-    $r->addRoute('GET', '/test', ['IndexController', 'test']);
-    $r->addRoute('GET', '/test/{testNo}', ['IndexController', 'testDetail']);
-    $r->addRoute('POST', '/test', ['IndexController', 'testPost']);
-    $r->addRoute('GET', '/jwt', ['MainController', 'validateJwt']);
-    $r->addRoute('POST', '/jwt', ['MainController', 'createJwt']);
-    
 
+    $r->addRoute('GET', '/jwt', ['IndexController', 'jwtUser']);      #특정 토큰으로 사용자 알기 & test용
+    $r->addRoute('POST', '/user', ['IndexController', 'createUser']);
+    $r->addRoute('POST', '/jwt', ['IndexController', 'login']);
+    $r->addRoute('PUT', '/user/body/initial', ['IndexController', 'userBodyInfo']);
+    $r->addRoute('POST', '/user/goal/initial', ['IndexController', 'userGoal']);
+    $r->addRoute('GET', '/profile/{userNo}', ['IndexController', 'userProfile']);   #추후에 친구인지 아닌지에 따라 다른 화면 구현예정 우선은 프로필이미지, 이름, 회원가입일만 보임.
+    $r->addRoute('PUT', '/profile', ['IndexController', 'editProfile']);
+   //$r->addRoute('GET', '/profile-tab', ['IndexController', 'profileTab']);
+    //$r->addRoute('PUT', '/profile', ['IndexController', 'editProfile']);
 
 //    $r->addRoute('GET', '/users', 'get_all_users_handler');
 //    // {id} must be a number (\d+)

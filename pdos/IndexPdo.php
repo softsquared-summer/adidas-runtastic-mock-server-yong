@@ -51,24 +51,6 @@ function testPost($name)
 }
 
 
-function isValidUser($id, $pw){
-    $pdo = pdoSqlConnect();
-    $query = "SELECT EXISTS(SELECT * FROM User WHERE userId= ? AND userPw = ?) AS exist;";
-
-
-    $st = $pdo->prepare($query);
-    //    $st->execute([$param,$param]);
-    $st->execute([$id, $pw]);
-    $st->setFetchMode(PDO::FETCH_ASSOC);
-    $res = $st->fetchAll();
-
-    $st=null;$pdo = null;
-
-    return intval($res[0]["exist"]);
-
-}
-
-
 // CREATE
 //    function addMaintenance($message){
 //        $pdo = pdoSqlConnect();
