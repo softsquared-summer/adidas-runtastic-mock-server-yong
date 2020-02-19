@@ -260,6 +260,8 @@ try {
 
         case "acceptOrDenyRequest":
             http_response_code(200);
+            $type = $vars["type"];
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
             $result = isValidHeader($jwt, JWT_SECRET_KEY);
             if (!$result->auth) {
                 $res->isSuccess = FALSE;
@@ -269,9 +271,33 @@ try {
                 addErrorLogs($errorLogs, $res, $req);
                 return;
             }
-            $userEmail = $result->info->email;
+/*
+            if($type == "accept")
+                $result = acceptRequest($req->requestNo);
+            else if($type == "deny")
+                $result = denyRequest($req->requestNo);
+            else{
+                $res->isSuccess = FALSE;
+                $res->code = 100;
+                $res->message = "유효하지 않은 타입입니다";
+                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
+*/
+            $result = acceptOrDenyRequest($req->requestNo, $type);
 
+            if($result == 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "요청 수락 성공";
+            }else if($result == 101){
+                $res->isSucces = TRUE;
+                $res->code = 100;
+                $res->message = "요청 거절 성공";
+            }
 
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
     }
 } catch (\Exception $e) {
     return getSQLErrorException($errorLogs, $e, $req);

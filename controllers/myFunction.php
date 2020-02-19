@@ -188,3 +188,63 @@ inner join (select friendRequest.no as requestNo, senderNo, receiverNo from frie
     else
         return $res;
 }
+
+function acceptRequest($requestNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "insert into friend (followingNo, followerNo) select receiverNo, senderNo from friendRequest where no=?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$requestNo]);
+
+    $query = "delete from friendRequest where no=?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$requestNo]);
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function denyRequest($requestNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "delete from friendRequest where no=?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$requestNo]);
+
+    $st = null;
+    $pdo = null;
+
+    return 101;
+}
+
+function acceptOrDenyRequest($requestNo, $type){
+    if($type == 'accept'){
+        $pdo = pdoSqlConnect();
+
+        $query = "insert into friend (followingNo, followerNo) select receiverNo, senderNo from friendRequest where no=?;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$requestNo]);
+        $code = 100;
+    }else if($type == 'denial'){
+        $pdo = pdoSqlConnect();
+        $code = 101;
+    }else{
+        return 200;
+    }
+
+    $query = "delete from friendRequest where no=?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$requestNo]);
+
+    $st = null;
+    $pdo = null;
+
+    return $code;
+}
