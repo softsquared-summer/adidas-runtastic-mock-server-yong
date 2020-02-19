@@ -271,19 +271,6 @@ try {
                 addErrorLogs($errorLogs, $res, $req);
                 return;
             }
-/*
-            if($type == "accept")
-                $result = acceptRequest($req->requestNo);
-            else if($type == "deny")
-                $result = denyRequest($req->requestNo);
-            else{
-                $res->isSuccess = FALSE;
-                $res->code = 100;
-                $res->message = "유효하지 않은 타입입니다";
-                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                break;
-            }
-*/
             $result = acceptOrDenyRequest($req->requestNo, $type);
 
             if($result == 100){
@@ -294,6 +281,12 @@ try {
                 $res->isSucces = TRUE;
                 $res->code = 100;
                 $res->message = "요청 거절 성공";
+            }else if($result == 200){
+                $res->isSuccess = FALSE;
+                $res->code = 100;
+                $res->message = "유효하지 않은 타입입니다";
+                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
             }
 
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
