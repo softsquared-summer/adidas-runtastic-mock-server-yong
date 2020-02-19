@@ -171,8 +171,8 @@ function addFriend($userEmail, $targetNo){
 function requestedFriend($userEmail){
     $pdo = pdoSqlConnect();
 
-    $query = "select no as senderNo, lName, fName, profileImage from user 
-inner join (select senderNo, receiverNo from friendRequest inner join user u on friendRequest.receiverNo = u.no and u.email=?) f on f.senderNo = user.no;";
+    $query = "select requestNo, no as senderNo, lName, fName, profileImage from user 
+inner join (select friendRequest.no as requestNo, senderNo, receiverNo from friendRequest inner join user u on friendRequest.receiverNo = u.no and u.email=?) f on f.senderNo = user.no;";
 
     $st = $pdo->prepare($query);
     $st->execute([$userEmail]);

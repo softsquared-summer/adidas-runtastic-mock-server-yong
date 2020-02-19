@@ -27,6 +27,7 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/friend', ['IndexController', 'userFriend']);
     $r->addRoute('POST', '/friend', ['IndexController', 'addFriend']);
     $r->addRoute('GET', '/friend/request', ['IndexController', 'requestedFriend']);
+    $r->addRoute('DELETE', '/friend/request/{type}', ['IndexController', 'acceptOrDenyRequest']);
 
 
    //$r->addRoute('GET', '/profile-tab', ['IndexController', 'profileTab']);
