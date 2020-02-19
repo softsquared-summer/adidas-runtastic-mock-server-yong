@@ -9,10 +9,18 @@ function createUser($email, $pw, $lName, $fName, $sex, $birth, $profileImage){
             $st = $pdo->prepare($query);
             $st->execute([$email, $pw, $lName, $fName, $birth]);
         }else if($sex != null && $profileImage == null){
-            $query = "insert into user (email, pw, lName, fName, birth, sex) values (?, ?, ?, ?, ?, ?);";
+            if($sex != 1){
+                $query = "insert into user (email, pw, lName, fName, birth, sex, profileImage) values (?, ?, ?, ?, ?, ?, ?);";
 
-            $st = $pdo->prepare($query);
-            $st->execute([$email, $pw, $lName, $fName, $birth, $sex]);
+                $st = $pdo->prepare($query);
+                $st->execute([$email, $pw, $lName, $fName, $birth, $sex, "https://dragonhyun.com/images/profileFemaleDefault.JPG"]);
+            }
+            else {
+                $query = "insert into user (email, pw, lName, fName, birth, sex) values (?, ?, ?, ?, ?, ?);";
+
+                $st = $pdo->prepare($query);
+                $st->execute([$email, $pw, $lName, $fName, $birth, $sex]);
+            }
         }else if($sex == null && $profileImage != null){
             $query = "insert into user (email, pw, lName, fName, birth, profileImage) values (?, ?, ?, ?, ?, ?);";
 
@@ -120,4 +128,28 @@ function editProfile($profileImage, $lName, $fName, $sex, $email, $birth, $heigh
     $pdo = null;
 
     return 100;
+}
+
+function userFriend($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query = "select no as friendNo, lName, fName, profileImage from user 
+inner join (select followingNo as friendNo, followerNo as myNo from friend inner join user u on friend.followerNo = u.no and u.email = ?) a on user.no = a.friendNo
+union
+select no as friendNo, lName, fName, profileImage from user 
+inner join (select followerNo as friendNo, followingNo as myNo from friend inner join user u on friend.followingNo = u.no and u.email = ?) a on user.no = a.friendNo;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail, $userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    if(sizeof($res) == 1)
+       return $res[0];
+    else
+        return $res;
 }
