@@ -153,3 +153,38 @@ inner join (select followerNo as friendNo, followingNo as myNo from friend inner
     else
         return $res;
 }
+
+function addFriend($userEmail, $targetNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "insert into friendRequest (senderNo, receiverNo) select no as senderNo, ? as receiverNo from user where email=?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$targetNo, $userEmail]);
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function requestedFriend($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query = "select no as senderNo, lName, fName, profileImage from user 
+inner join (select senderNo, receiverNo from friendRequest inner join user u on friendRequest.receiverNo = u.no and u.email=?) f on f.senderNo = user.no;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    if(sizeof($res) == 1)
+        return $res[0];
+    else
+        return $res;
+}

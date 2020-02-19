@@ -207,6 +207,56 @@ try {
             }
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
+
+        case "addFriend":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+            $result = addFriend($userEmail, $req->targetNo);
+
+            if($result == 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "친구요청 성공";
+            }
+
+            echo json_encode($res, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            break;
+
+        case "requestedFriend":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+            $res->result = requestedFriend($userEmail);
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "친구 요청이 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "친구요청 검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
     }
 } catch (\Exception $e) {
     return getSQLErrorException($errorLogs, $e, $req);

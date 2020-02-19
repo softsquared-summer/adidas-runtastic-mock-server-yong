@@ -25,6 +25,9 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/profile/{userNo}', ['IndexController', 'userProfile']);   #추후에 친구인지 아닌지에 따라 다른 화면 구현예정 우선은 프로필이미지, 이름, 회원가입일만 보임.
     $r->addRoute('PUT', '/profile', ['IndexController', 'editProfile']);
     $r->addRoute('GET', '/friend', ['IndexController', 'userFriend']);
+    $r->addRoute('POST', '/friend', ['IndexController', 'addFriend']);
+    $r->addRoute('GET', '/friend/request', ['IndexController', 'requestedFriend']);
+
 
    //$r->addRoute('GET', '/profile-tab', ['IndexController', 'profileTab']);
     //$r->addRoute('PUT', '/profile', ['IndexController', 'editProfile']);
