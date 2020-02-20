@@ -329,6 +329,9 @@ try {
 
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
+
+        case "uploadImage":
+            http_response_code(200);
     }
 } catch (\Exception $e) {
     return getSQLErrorException($errorLogs, $e, $req);

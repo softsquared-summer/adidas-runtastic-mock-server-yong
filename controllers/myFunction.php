@@ -23,6 +23,15 @@ function createUser($email, $pw, $lName, $fName, $sex, $birth, $profileImage){
             }
         }else if($sex == null && $profileImage != null){
             $query = "insert into user (email, pw, lName, fName, birth, profileImage) values (?, ?, ?, ?, ?, ?);";
+            
+            /*
+             * 추후 upload기능 완성시키면 수정할 것.
+             * $query = "insert into user (email, pw, lName, fName, birth) values (?, ?, ?, ?, ?);";
+             * $st = $pdo->prepare($query);
+             * $st->execute([$email, $pw, $lName, $fName, $birth]);
+             * 
+             * uploadProfileImage($file, $userNo)  -> userNo는 위의 query에서 no 받아와야할듯
+             */
 
             $st = $pdo->prepare($query);
             $st->execute([$email, $pw, $lName, $fName, $birth, $profileImage]);

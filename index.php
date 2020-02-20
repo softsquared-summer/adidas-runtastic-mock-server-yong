@@ -29,6 +29,8 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/friend/request', ['IndexController', 'requestedFriend']);
     $r->addRoute('DELETE', '/friend/request/{type}', ['IndexController', 'acceptOrDenyRequest']);
 
+    $r->addRoute('POST', '/upload/{type}', ['IndexController', 'uploadImage']);
+
 
    //$r->addRoute('GET', '/profile-tab', ['IndexController', 'profileTab']);
     //$r->addRoute('PUT', '/profile', ['IndexController', 'editProfile']);
