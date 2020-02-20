@@ -53,6 +53,12 @@ try {
                 echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 break;
             }
+            if($req->sex > 2){
+                $res->isSuccess = FALSE;
+                $res->code = 204;
+                $res->message = "성별은 2 이하 이어야 합니다.";
+                echo json_encode($res, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            }
             $result = createUser($req->email, $req->pw, $req->lName, $req->fName, $req->sex, $req->birth, $req->profileImage);
 
             if($result[0][code] == 100){
@@ -114,7 +120,20 @@ try {
 
         case "userBodyInfo":
             http_response_code(200);
-
+            if($req->heightType > 2){
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "heightType은 2 이하 이어야합니다.";
+                echo json_encode($res, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                break;
+            }
+            if($req->weightType > 3){
+                $res->isSuccess = FALSE;
+                $res->code = 202;
+                $res->message = "weightType은 3 이하 이어야 합니다.";
+                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
             $result = userBodyInfo($req->userNo, $req->height, $req->heightType, $req->weight, $req->weightType);
             if($result == 100){
                 $res->isSuccess = TRUE;
@@ -127,7 +146,20 @@ try {
         case "userGoal":
             http_response_code(200);
             $result = userGoal($req->userNo, $req->exerciseType, $req->termType, $req->termValue, $req->measureType, $req->measureValue);
-
+            if($req->termType > 5){
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "termType은 5 이하 이어야 합니다.";
+                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
+            if($req->measureType > 3){
+                $res->isSuccess = FALSE;
+                $res->code = 202;
+                $res->message = "measureType은 3 이하 이어야 합니다.";
+                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
             if($result == 100){
                 $res->isSuccess = TRUE;
                 $res->code = 100;

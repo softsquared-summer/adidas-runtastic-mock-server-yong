@@ -52,19 +52,29 @@ function createUser($email, $pw, $lName, $fName, $sex, $birth, $profileImage){
 }
 
 function userBodyInfo($userNo, $height, $heightType, $weight, $weightType){
+
+    if(trim($height) == "")
+        $height = null;
+    if(trim($heightType) == "")
+        $heightType = null;
+    if(trim($weight) == "")
+        $weight = null;
+    if(trim($weightType) == "")
+        $weightType = null;
+
     $pdo = pdoSqlConnect();
 
-    if($height != null && $weight == null){
+    if($height != null && $heightType != null && $weight == null || $weightType == null){
         $query = "update user set height=?, heightType=? where no=?;";
 
         $st = $pdo->prepare($query);
         $st->execute([$height, $heightType, $userNo]);
-    }else if($height == null && $weight != null){
+    }else if($height == null || $heightType == null && $weight != null && $weightType != null){
         $query = "update user set weight=?, weightType=? where no=?;";
 
         $st = $pdo->prepare($query);
         $st->execute([$weight, $weightType, $userNo]);
-    }else{
+    }else if($height != null && $heightType != null && $weight != null && $weightType != null){
 
         $query = "update user set height=?, heightType=?, weight=?, weightType=? where no=?;";
 
