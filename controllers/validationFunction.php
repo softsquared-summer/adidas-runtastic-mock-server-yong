@@ -54,3 +54,19 @@ function isValidUser($email, $pw){
     return intval($res[0]["exist"]);
 
 }
+
+function pwCheck($_str){
+    $pw = $_str;
+    $num = preg_match('/[0-9]/u', $pw);
+    $sEng = preg_match('/[a-z]/u', $pw);
+    $bEng = preg_match('/[A-Z]/u', $pw);
+
+    if(strlen($pw) < 8 || strlen($pw) > 30){
+        return array(false, "비밀번호는 소문자, 대문자, 숫자 하나씩 혼합하여 최소8 ~ 최대30");
+        exit;
+    }
+    if($num == 0 || $sEng == 0 || $bEng == 0){
+        return array(false, "소문자, 대문자, 숫자를 혼합해주세요");
+    }
+     return array(true);
+}

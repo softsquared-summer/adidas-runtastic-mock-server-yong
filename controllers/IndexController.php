@@ -29,24 +29,30 @@ try {
          */
         case "createUser":
             http_response_code(200);
-            /*
+
             $check_id = preg_match("/^[_\.0-9a-zA-Z-]+@([0-9a-zA-Z][0-9a-zA-Z-]+\.)+[a-zA-Z]{2,6}$/i", $req->email);
-            $check_pw = preg_match("/^(?=.*[a-zA-Z])(?=.*[^a-zA-Z0-9]|.*[0-9]).{8,24}$/", $req->pw);
+            $check_pw = pwCheck($req->pw);
             if(!$check_id){
                 $res->isSuccess = FALSE;
-                $res->code = 100;
+                $res->code = 201;
                 $res->message = "올바르지 않은 이메일 형식입니다.";
                 echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 break;
             }
-            if(!$check_pw){
+            if($check_pw[0] == false){
                 $res->isSuccess = FALSE;
-                $res->code = 100;
-                $res->message = "올바르지 않은 비밀번호 형식입니다.";
+                $res->code = 202;
+                $res->message = $check_pw[1];
                 echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 break;
             }
-            validation*/
+            if(trim($req->lName) == "" || trim($req->fName) == "" || trim($req->birth) == ""){
+                $res->isSuccess = FALSE;
+                $res->code = 203;
+                $res->message = "입력하지 않은 필수 기입사항을 확인해주세요";
+                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
             $result = createUser($req->email, $req->pw, $req->lName, $req->fName, $req->sex, $req->birth, $req->profileImage);
 
             if($result[0][code] == 100){
@@ -221,7 +227,7 @@ try {
                 return;
             }
             $userEmail = $result->info->email;
-            $result = addFriend($userEmail, $req->targetNo);
+            $result = addFriend($userEmail, $req->userNo);
 
             if($result == 100){
                 $res->isSuccess = TRUE;

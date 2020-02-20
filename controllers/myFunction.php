@@ -154,13 +154,13 @@ inner join (select followerNo as friendNo, followingNo as myNo from friend inner
         return $res;
 }
 
-function addFriend($userEmail, $targetNo){
+function addFriend($userEmail, $userNo){
     $pdo = pdoSqlConnect();
 
     $query = "insert into friendRequest (senderNo, receiverNo) select no as senderNo, ? as receiverNo from user where email=?;";
 
     $st = $pdo->prepare($query);
-    $st->execute([$targetNo, $userEmail]);
+    $st->execute([$userNo, $userEmail]);
 
     $st = null;
     $pdo = null;
