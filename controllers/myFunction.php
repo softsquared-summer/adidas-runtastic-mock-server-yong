@@ -234,3 +234,139 @@ function acceptOrDenyRequest($requestNo, $type){
 
     return $code;
 }
+
+function searchSneakersBrand(){
+    $pdo = pdoSqlConnect();
+
+    $query = "select no as brandNo, brandName from sneakersBrand;";
+
+    $st = $pdo->prepare($query);
+    $st->execute();
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    if(sizeof($res) == 1)
+        return $res[0];
+    else
+        return $res;
+}
+
+function searchSneakersModel($brandNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "select brandNo, no as modelNo, modelName, imageUrl from sneakersModel where brandNo = ?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$brandNo]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    if(sizeof($res) == 1)
+        return $res[0];
+    else
+        return $res;
+}
+
+function addSneakers($userEmail, $modelNo, $nickname, $imageUrl, $sizeType, $sizeValue, $colorNo, $startedAt, $limitDistance){
+    $pdo = pdoSqlConnect();
+    if(trim($nickname) == "")
+        $nickname = null;
+    if(trim($imageUrl) == "")
+        $imageUrl = null;
+
+    if($nickname == null && $imageUrl == null){
+        $query = "insert into userSneakers (userNo, modelNo, nickname, imageUrl, sizeType, sizeValue, colorNo, startedAt, limitDistance)
+ select (select no from user where email=?) as userNo, no as modelNo, modelName as nickname, imageUrl, ?, ?, ?, ?, ? from sneakersModel where no=?;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail, $sizeType, $sizeValue, $colorNo, $startedAt, $limitDistance, $modelNo]);
+    }else if($nickname == null && $imageUrl != null){
+        $query = "insert into userSneakers (userNo, modelNo, nickname, imageUrl, sizeType, sizeValue, colorNo, startedAt, limitDistance)
+ select (select no from user where email=?) as userNo, no as modelNo, modelName as nickname, ?, ?, ?, ?, ?, ? from sneakersModel where no=?;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail, $imageUrl, $sizeType, $sizeValue, $colorNo, $startedAt, $limitDistance, $modelNo]);
+    }else if($nickname != null && $imageUrl == null){
+        $query = "insert into userSneakers (userNo, modelNo, nickname, imageUrl, sizeType, sizeValue, colorNo, startedAt, limitDistance)
+ select (select no from user where email=?) as userNo, no as modelNo, ?, imageUrl, ?, ?, ?, ?, ? from sneakersModel where no=?;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail, $nickname, $sizeType, $sizeValue, $colorNo, $startedAt, $limitDistance, $modelNo]);
+    }else {
+        $query = "insert into userSneakers (userNo, modelNo, nickname, imageUrl, sizeType, sizeValue, colorNo, startedAt, limitDistance) select no as userNo, ?, ?, ?, ?, ?, ?, ?, ? from user where email=?;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$modelNo, $nickname, $imageUrl, $sizeType, $sizeValue, $colorNo, $startedAt, $limitDistance, $userEmail]);
+    }
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function deleteSneakers($userEmail, $sneakersNo){
+    $pdo = pdoSqlConnect();
+
+
+    $query = "delete from userSneakers where no = ? and userNo in (select no as userNo from user where email = ?);";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$sneakersNo, $userEmail]);
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function userSneakers($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query = "select userSneakers.no as sneakersNo, userNo, nickname, imageUrl, limitDistance from userSneakers 
+inner join user u on userSneakers.userNo = u.no and u.email = ?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    if(sizeof($res) == 1)
+        return $res[0];
+    else
+        return $res;
+}
+
+function sneakersInfo($userEmail, $sneakersNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "select nickname, modelName, userSneakers.imageUrl as imageUrl, limitDistance, startedAt from userSneakers
+    inner join user u on userSneakers.userNo = u.no and u.email = ? and userSneakers.no = ?
+    inner join sneakersModel sM on userSneakers.modelNo = sM.no
+    inner join sneakersBrand sB on sM.brandNo = sB.no;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail, $sneakersNo]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    if(sizeof($res) == 1)
+        return $res[0];
+    else
+        return $res;
+}

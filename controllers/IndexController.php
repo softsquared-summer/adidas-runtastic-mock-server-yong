@@ -330,8 +330,172 @@ try {
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
-        case "uploadImage":
+        case "searchSneakersBrand":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $res->result = searchSneakersBrand();
+
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "브랜드 검색 결과가 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "브랜드 검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "searchSneakersModel":
+            http_response_code(200);
+            $brandNo = $vars["brandNo"];
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            echo $brandNo;
+            $res->result = searchSneakersModel($brandNo);
+
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "모델 검색 결과가 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "모델 검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "addSneakers":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            if(trim($req->modelNo) == "" ||  trim($req->sizeType) == "" || trim($req->sizeValue) == "" || trim($req->colorNo) == "" || trim($req->startedAt) == "" || trim($req->limitDistance) == ""){
+                $res->isSuccess = FALSE;
+                $res->code = 203;
+                $res->message = "입력하지 않은 필수 기입사항을 확인해주세요";
+                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
+
+            $userEmail = $result->info->email;
+            $result = addSneakers($userEmail, $req->modelNo, $req->nickname, $req->imageUrl, $req->sizeType, $req->sizeValue, $req->colorNo, $req->startedAt, $req->limitDistance);
+            
+            if($result = 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "운동화 추가 성공";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "deleteSneakers":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $userEmail = $result->info->email;
+            $result = deleteSneakers($userEmail, $req->sneakersNo);
+
+            if($result = 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "운동화 삭제 성공";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "userSneakers":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+
+            $res->result = userSneakers($userEmail);
+
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "검색 결과가 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "sneakersInfo":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+
+            $res->result = sneakersInfo($userEmail, $req->sneakersNo);
+
+
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "검색 결과가 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
     }
 } catch (\Exception $e) {
     return getSQLErrorException($errorLogs, $e, $req);

@@ -29,6 +29,14 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/friend/request', ['IndexController', 'requestedFriend']);
     $r->addRoute('DELETE', '/friend/request/{type}', ['IndexController', 'acceptOrDenyRequest']);
 
+    $r->addRoute('GET', '/sneakers/brand', ['IndexController', 'searchSneakersBrand']);
+    $r->addRoute('GET', '/sneakers/model/{brandNo}', ['IndexController', 'searchSneakersModel']);
+    $r->addRoute('POST', '/sneakers', ['IndexController', 'addSneakers']);
+    $r->addRoute('PUT', '/sneakers', ['IndexController', 'editSneakers']);
+    $r->addRoute('DELETE', '/sneakers', ['IndexController', 'deleteSneakers']);
+    $r->addRoute('GET', '/user/sneakers', ['IndexController', 'userSneakers']);
+    $r->addRoute('GET', '/sneakers', ['IndexController', 'sneakersInfo']);      #추후에 sneakers관련된것중 활동, 운동km수 누적 구현해야함.
+
     $r->addRoute('POST', '/upload/{type}', ['IndexController', 'uploadImage']);
 
 
