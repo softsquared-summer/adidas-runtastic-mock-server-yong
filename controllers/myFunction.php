@@ -209,16 +209,26 @@ inner join (select friendRequest.no as requestNo, senderNo, receiverNo from frie
 }
 
 function acceptOrDenyRequest($requestNo, $type){
-    if($type == 'accept'){
-        $pdo = pdoSqlConnect();
+    $pdo = pdoSqlConnect();
 
+    $query = "select * from friendRequest where no=?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$requestNo]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    if($res == null)
+        return 201;
+
+    if($type == 'accept'){
         $query = "insert into friend (followingNo, followerNo) select receiverNo, senderNo from friendRequest where no=?;";
 
         $st = $pdo->prepare($query);
         $st->execute([$requestNo]);
         $code = 100;
     }else if($type == 'denial'){
-        $pdo = pdoSqlConnect();
         $code = 101;
     }else{
         return 200;
@@ -427,4 +437,11 @@ function addGoal($userEmail, $exerciseType, $termType, $termValue, $measureType,
     $pdo = null;
 
     return 100;
+}
+
+function addActivity($userEmail, $sneakersNo, $distance, $eTime, $calorie, $averagePace, $averageSpeed, $maxSpeed, $exerciseType, $goalType, $goalNo, $facialEmoticon, $placeEmoticon, $weather, $temperature, $imageUrl, $memo){
+    $pdo = pdoSqlConnect();
+
+
+
 }

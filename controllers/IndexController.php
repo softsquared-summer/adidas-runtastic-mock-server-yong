@@ -321,10 +321,14 @@ try {
                 $res->message = "요청 거절 성공";
             }else if($result == 200){
                 $res->isSuccess = FALSE;
-                $res->code = 100;
+                $res->code = 200;
                 $res->message = "유효하지 않은 타입입니다";
                 echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 break;
+            }else if($result ==  201){
+                $res->isSuccess = TRUE;
+                $res->code = 201;
+                $res->message = "존재 하지 않은 요청입니다.";
             }
 
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -560,6 +564,31 @@ try {
             }
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
+
+        case "addActivity":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+
+            $result = addActivity($userEmail, $req->sneakersNo, $req->distance, $req->eTime, $req->calorie, $req->averagePace, $req->averageSpeed, $req->maxSpeed, $req->exerciseType, $req->goalType, $req->goalNo, $req->facialEmoticon, $req->placeEmoticon, $req->weather, $req->temperature, $req->imageUrl, $req->memo);
+
+            if($result == 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "활동 추가 성공";
+            }
+            echo json_encoe($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
     }
 } catch (\Exception $e) {
     return getSQLErrorException($errorLogs, $e, $req);

@@ -40,8 +40,10 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/user/sneakers', ['IndexController', 'userSneakers']);
     $r->addRoute('GET', '/sneakers', ['IndexController', 'sneakersInfo']);      #추후에 sneakers관련된것중 활동, 운동km수 누적 구현해야함.
 
-    $r->addRoute('GET', '/goal', ['IndexController', 'userGoal']);
+    $r->addRoute('GET', '/goal', ['IndexController', 'userGoal']);              #추후에 운동km 누적 구현
     $r->addRoute('POST', '/goal', ['IndexController', 'addGoal']);
+
+    $r->addRoute('POST', '/activity', ['IndexController', 'addActivity']);
 
 
     $r->addRoute('POST', '/upload/{type}', ['IndexController', 'uploadImage']);
