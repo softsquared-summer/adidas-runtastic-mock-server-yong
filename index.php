@@ -18,12 +18,15 @@ ini_set('default_charset', 'utf8mb4');
 $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) {
 
     $r->addRoute('GET', '/jwt', ['IndexController', 'jwtUser']);      #특정 토큰으로 사용자 알기 & test용
-    $r->addRoute('POST', '/user', ['IndexController', 'createUser']);
     $r->addRoute('POST', '/jwt', ['IndexController', 'login']);
-    $r->addRoute('PUT', '/user/body/initial', ['IndexController', 'userBodyInfo']);
-    $r->addRoute('POST', '/user/goal/initial', ['IndexController', 'userGoal']);
+
+    $r->addRoute('POST', '/user', ['IndexController', 'createUser']);
+    $r->addRoute('PUT', '/user/body/initial', ['IndexController', 'setInitialBody']);
+    $r->addRoute('POST', '/user/goal/initial', ['IndexController', 'setInitialGoal']);
+
     $r->addRoute('GET', '/profile/{userNo}', ['IndexController', 'userProfile']);   #추후에 친구인지 아닌지에 따라 다른 화면 구현예정 우선은 프로필이미지, 이름, 회원가입일만 보임.
     $r->addRoute('PUT', '/profile', ['IndexController', 'editProfile']);
+
     $r->addRoute('GET', '/friend', ['IndexController', 'userFriend']);
     $r->addRoute('POST', '/friend', ['IndexController', 'addFriend']);
     $r->addRoute('GET', '/friend/request', ['IndexController', 'requestedFriend']);
@@ -36,6 +39,10 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('DELETE', '/sneakers', ['IndexController', 'deleteSneakers']);
     $r->addRoute('GET', '/user/sneakers', ['IndexController', 'userSneakers']);
     $r->addRoute('GET', '/sneakers', ['IndexController', 'sneakersInfo']);      #추후에 sneakers관련된것중 활동, 운동km수 누적 구현해야함.
+
+    $r->addRoute('GET', '/goal', ['IndexController', 'userGoal']);
+    $r->addRoute('POST', '/goal', ['IndexController', 'addGoal']);
+
 
     $r->addRoute('POST', '/upload/{type}', ['IndexController', 'uploadImage']);
 

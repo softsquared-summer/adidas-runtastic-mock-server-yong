@@ -60,7 +60,7 @@ function createUser($email, $pw, $lName, $fName, $sex, $birth, $profileImage){
     }
 }
 
-function userBodyInfo($userNo, $height, $heightType, $weight, $weightType){
+function setInitialBody($userNo, $height, $heightType, $weight, $weightType){
 
     if(trim($height) == "")
         $height = null;
@@ -97,7 +97,7 @@ function userBodyInfo($userNo, $height, $heightType, $weight, $weightType){
     return 100;
 }
 
-function userGoal($userNo, $exerciseType, $termType, $termValue, $measureType, $measureValue){
+function setInitialGoal($userNo, $exerciseType, $termType, $termValue, $measureType, $measureValue){
     $pdo = pdoSqlConnect();
 
     if($termType == 5){
@@ -369,4 +369,62 @@ function sneakersInfo($userEmail, $sneakersNo){
         return $res[0];
     else
         return $res;
+}
+
+function userGoal($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query = "select termValue,
+       case
+           when termType = 1 then '오늘'
+           when termType = 2 then '이번 주'
+           when termType = 3 then '이번 달'
+           when termType = 4 then '올해'
+           when termType = 5 then concat(concat(concat(concat(substr(termValue, 1, 4), '. '), concat(substr(termValue, 5, 2), '. '))
+               , concat(substr(termValue, 7, 2), '. ')), '까지')
+        end as termName,
+       termType,
+       case
+           when measureType = 1 then concat('목표: ', concat(measureValue, ' km'))
+           when measureType = 2 then concat('목표: ', concat(concat(substr(measureValue, 1, 2), ':'), substr(measureValue, 3, 2)))
+           when measureType = 3 then concat('목표: ', concat(measureValue, ' 회'))
+           end as goalName,
+       measureValue, measureType, exerciseName, exerciseType from userGoal
+    inner join user u on userGoal.userNo = u.no and u.email = ?
+    inner join exercise e on userGoal.exerciseType = e.no;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    if(sizeof($res) == 1)
+        return $res[0];
+    else
+        return $res;
+}
+
+function addGoal($userEmail, $exerciseType, $termType, $termValue, $measureType, $measureValue){
+    $pdo = pdoSqlConnect();
+
+    if($termType == 5){
+        $query = "insert into userGoal (userNo, exerciseType, termType, termValue, measureType, measureValue) select no as userNo, ?, ?, ?, ?, ? from user where email=?;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$exerciseType, $termType, $termValue, $measureType, $measureValue, $userEmail]);
+    }else{
+        $query = "insert into userGoal (userNo, exerciseType, termType, measureType, measureValue) select no as userNo, ?, ?, ?, ? from user where email=?;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$exerciseType, $termType, $measureType, $measureValue, $userEmail]);
+    }
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
 }

@@ -118,7 +118,7 @@ try {
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
 
-        case "userBodyInfo":
+        case "setInitialBody":
             http_response_code(200);
             if($req->heightType > 2){
                 $res->isSuccess = FALSE;
@@ -134,7 +134,7 @@ try {
                 echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 break;
             }
-            $result = userBodyInfo($req->userNo, $req->height, $req->heightType, $req->weight, $req->weightType);
+            $result = setInitialBody($req->userNo, $req->height, $req->heightType, $req->weight, $req->weightType);
             if($result == 100){
                 $res->isSuccess = TRUE;
                 $res->code = 100;
@@ -143,9 +143,9 @@ try {
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
-        case "userGoal":
+        case "setInitialGoal":
             http_response_code(200);
-            $result = userGoal($req->userNo, $req->exerciseType, $req->termType, $req->termValue, $req->measureType, $req->measureValue);
+            $result = setInitialGoal($req->userNo, $req->exerciseType, $req->termType, $req->termValue, $req->measureType, $req->measureValue);
             if($req->termType > 5){
                 $res->isSuccess = FALSE;
                 $res->code = 201;
@@ -484,6 +484,33 @@ try {
 
             $res->result = sneakersInfo($userEmail, $req->sneakersNo);
 
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "검색 결과가 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "userGoal":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+
+            $res->result = userGoal($userEmail);
 
             if($res->result == null){
                 $res->isSuccess = TRUE;
@@ -493,6 +520,43 @@ try {
                 $res->isSuccess = TRUE;
                 $res->code = 100;
                 $res->messgae = "검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "addGoal":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+
+            $result = addGoal($userEmail, $req->exerciseType, $req->termType, $req->termValue, $req->measureType, $req->measureValue);
+            if($req->termType > 5){
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "termType은 5 이하 이어야 합니다.";
+                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
+            if($req->measureType > 3){
+                $res->isSuccess = FALSE;
+                $res->code = 202;
+                $res->message = "measureType은 3 이하 이어야 합니다.";
+                echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            }
+            if($result == 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "초기 목표 설정 성공";
             }
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
