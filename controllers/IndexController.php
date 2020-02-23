@@ -586,7 +586,7 @@ try {
                 $res->code = 100;
                 $res->message = "활동 추가 성공";
             }
-            echo json_encoe($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
     }

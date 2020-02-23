@@ -4,10 +4,10 @@ function createUser($email, $pw, $lName, $fName, $sex, $birth, $profileImage){
     if(availableEmail($email)){
         $pdo = pdoSqlConnect();
         if($sex == null && $profileImage == null){
-            $query = "insert into user (email, pw, lName, fName, birth) values (?, ?, ?, ?, ?);";
+            $query = "insert into user (email, pw, lName, fName, birth, profileImage) values (?, ?, ?, ?, ?, ?);";
 
             $st = $pdo->prepare($query);
-            $st->execute([$email, $pw, $lName, $fName, $birth]);
+            $st->execute([$email, $pw, $lName, $fName, $birth, "https://dragonhyun.com/images/profileMaleDefault.JPG"]);
         }else if($sex != null && $profileImage == null){
             if($sex != 1){
                 $query = "insert into user (email, pw, lName, fName, birth, sex, profileImage) values (?, ?, ?, ?, ?, ?, ?);";
@@ -16,10 +16,10 @@ function createUser($email, $pw, $lName, $fName, $sex, $birth, $profileImage){
                 $st->execute([$email, $pw, $lName, $fName, $birth, $sex, "https://dragonhyun.com/images/profileFemaleDefault.JPG"]);
             }
             else {
-                $query = "insert into user (email, pw, lName, fName, birth, sex) values (?, ?, ?, ?, ?, ?);";
+                $query = "insert into user (email, pw, lName, fName, birth, sex, profileImage) values (?, ?, ?, ?, ?, ?, ?);";
 
                 $st = $pdo->prepare($query);
-                $st->execute([$email, $pw, $lName, $fName, $birth, $sex]);
+                $st->execute([$email, $pw, $lName, $fName, $birth, $sex, "https://dragonhyun.com/images/profileMaleDefault.JPG"]);
             }
         }else if($sex == null && $profileImage != null){
             $query = "insert into user (email, pw, lName, fName, birth, profileImage) values (?, ?, ?, ?, ?, ?);";
@@ -340,7 +340,7 @@ function deleteSneakers($userEmail, $sneakersNo){
 function userSneakers($userEmail){
     $pdo = pdoSqlConnect();
 
-    $query = "select userSneakers.no as sneakersNo, userNo, nickname, imageUrl, limitDistance from userSneakers 
+    $query = "select userSneakers.no as sneakersNo, userNo, nickname, imageUrl, totalDistance, limitDistance from userSneakers 
 inner join user u on userSneakers.userNo = u.no and u.email = ?;";
 
     $st = $pdo->prepare($query);
@@ -361,7 +361,7 @@ inner join user u on userSneakers.userNo = u.no and u.email = ?;";
 function sneakersInfo($userEmail, $sneakersNo){
     $pdo = pdoSqlConnect();
 
-    $query = "select nickname, modelName, userSneakers.imageUrl as imageUrl, limitDistance, startedAt from userSneakers
+    $query = "select nickname, modelName, userSneakers.imageUrl as imageUrl, totalDistance, limitDistance, startedAt from userSneakers
     inner join user u on userSneakers.userNo = u.no and u.email = ? and userSneakers.no = ?
     inner join sneakersModel sM on userSneakers.modelNo = sM.no
     inner join sneakersBrand sB on sM.brandNo = sB.no;";
@@ -442,6 +442,23 @@ function addGoal($userEmail, $exerciseType, $termType, $termValue, $measureType,
 function addActivity($userEmail, $sneakersNo, $distance, $eTime, $calorie, $averagePace, $averageSpeed, $maxSpeed, $exerciseType, $goalType, $goalNo, $facialEmoticon, $placeEmoticon, $weather, $temperature, $imageUrl, $memo){
     $pdo = pdoSqlConnect();
 
+    $query = "insert into activity (userNo, sneakersNo, distance, eTime, calorie, averagePace, averageSpeed, maxSpeed, exerciseType, goalType,
+                      goalNo, facialEmoticon, placeEmoticon, weather, temperature, imageUrl, memo)
+                      select no as userNo, ? as sneakersNo, ? as distance, ? as eTime, ? as calorie, ? as averagePace, ? as averageSpeed, ? as maxSpeed, ? as exerciseType, ? as goalType,
+                             ? as goalNo, ? as facialEmotiocon, ? as placeEmoticon, ? as weather, ? as temperature, ? as imageurl, ? as memo from user where email=?;";
 
+    $st = $pdo->prepare($query);
+    $st->execute([$sneakersNo, $distance, $eTime, $calorie, $averagePace, $averageSpeed, $maxSpeed, $exerciseType, $goalType, $goalNo, $facialEmoticon, $placeEmoticon, $weather, $temperature, $imageUrl, $memo, $userEmail]);
 
+    if($sneakersNo != null){
+        $query = "update userSneakers set totalDistance = totalDistance + ? where no = ?;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$distance, $sneakersNo]);
+    }
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
 }
