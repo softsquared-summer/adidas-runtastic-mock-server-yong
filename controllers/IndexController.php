@@ -46,7 +46,7 @@ try {
                 echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 break;
             }
-            if(trim($req->lName) == "" || trim($req->fName) == "" || trim($req->birth) == ""){
+            if(trim($req->lastName) == "" || trim($req->firstName) == "" || trim($req->birth) == ""){
                 $res->isSuccess = FALSE;
                 $res->code = 203;
                 $res->message = "입력하지 않은 필수 기입사항을 확인해주세요";
@@ -59,7 +59,7 @@ try {
                 $res->message = "성별은 2 이하 이어야 합니다.";
                 echo json_encode($res, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }
-            $result = createUser($req->email, $req->pw, $req->lName, $req->fName, $req->sex, $req->birth, $req->profileImage);
+            $result = createUser($req->email, $req->pw, $req->lastName, $req->firstName, $req->sex, $req->birth, $req->profileImage);
 
             if($result[0][code] == 100){
                 $res->userNo = $result[0]['no'];
@@ -210,7 +210,7 @@ try {
             }
             $userEmail = $result->info->email;
 
-            $result = editProfile($req->profileImage, $req->lName, $req->fName, $req->sex, $req->email, $req->birth, $req->height, $req->heightType, $req->weight, $req->weightType, $userEmail);
+            $result = editProfile($req->profileImage, $req->lastName, $req->firstName, $req->sex, $req->email, $req->birth, $req->height, $req->heightType, $req->weight, $req->weightType, $userEmail);
             if($result == 100) {
                 $res->isSuccess = TRUE;
                 $res->code = 100;
@@ -326,7 +326,7 @@ try {
                 echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 break;
             }else if($result ==  201){
-                $res->isSuccess = TRUE;
+                $res->isSuccess = FALSE;
                 $res->code = 201;
                 $res->message = "존재 하지 않은 요청입니다.";
             }
@@ -579,7 +579,7 @@ try {
             }
             $userEmail = $result->info->email;
 
-            $result = addActivity($userEmail, $req->sneakersNo, $req->distance, $req->eTime, $req->calorie, $req->averagePace, $req->averageSpeed, $req->maxSpeed, $req->exerciseType, $req->goalType, $req->goalNo, $req->facialEmoticon, $req->placeEmoticon, $req->weather, $req->temperature, $req->imageUrl, $req->memo);
+            $result = addActivity($userEmail, $req->sneakersNo, $req->distance, $req->exerciseTfime, $req->calorie, $req->averagePace, $req->averageSpeed, $req->maxSpeed, $req->exerciseType, $req->goalType, $req->goalNo, $req->facialEmoticon, $req->placeEmoticon, $req->weather, $req->temperature, $req->imageUrl, $req->memo);
 
             if($result == 100){
                 $res->isSuccess = TRUE;
@@ -589,6 +589,79 @@ try {
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
+        case "userActivity":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+
+            $res->result = userActivity($userEmail);
+
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "검색 결과가 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "editActivity":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+            $result = editActivity($userEmail, $req->activityNo);
+
+            if($result == 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "활동 수정 성공";
+            }
+            echo json_encode($res, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            break;
+
+        case "deleteActivity":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+            $result = deleteActivity($userEmail, $req->activityNo);
+
+            if($result == 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "활동 삭제 성공";
+            }
+            echo json_encode($res, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            break;
     }
 } catch (\Exception $e) {
     return getSQLErrorException($errorLogs, $e, $req);

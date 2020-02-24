@@ -1,28 +1,28 @@
 <?php
 
-function createUser($email, $pw, $lName, $fName, $sex, $birth, $profileImage){
+function createUser($email, $pw, $lastName, $firstName, $sex, $birth, $profileImage){
     if(availableEmail($email)){
         $pdo = pdoSqlConnect();
         if($sex == null && $profileImage == null){
-            $query = "insert into user (email, pw, lName, fName, birth, profileImage) values (?, ?, ?, ?, ?, ?);";
+            $query = "insert into user (email, pw, lastName, firstName, birth, profileImage) values (?, ?, ?, ?, ?, ?);";
 
             $st = $pdo->prepare($query);
-            $st->execute([$email, $pw, $lName, $fName, $birth, "https://dragonhyun.com/images/profileMaleDefault.JPG"]);
+            $st->execute([$email, $pw, $lastName, $firstName, $birth, "https://dragonhyun.com/images/profileMaleDefault.JPG"]);
         }else if($sex != null && $profileImage == null){
             if($sex != 1){
-                $query = "insert into user (email, pw, lName, fName, birth, sex, profileImage) values (?, ?, ?, ?, ?, ?, ?);";
+                $query = "insert into user (email, pw, lastName, firstName, birth, sex, profileImage) values (?, ?, ?, ?, ?, ?, ?);";
 
                 $st = $pdo->prepare($query);
-                $st->execute([$email, $pw, $lName, $fName, $birth, $sex, "https://dragonhyun.com/images/profileFemaleDefault.JPG"]);
+                $st->execute([$email, $pw, $lastName, $firstName, $birth, $sex, "https://dragonhyun.com/images/profileFemaleDefault.JPG"]);
             }
             else {
-                $query = "insert into user (email, pw, lName, fName, birth, sex, profileImage) values (?, ?, ?, ?, ?, ?, ?);";
+                $query = "insert into user (email, pw, lastName, firstName, birth, sex, profileImage) values (?, ?, ?, ?, ?, ?, ?);";
 
                 $st = $pdo->prepare($query);
-                $st->execute([$email, $pw, $lName, $fName, $birth, $sex, "https://dragonhyun.com/images/profileMaleDefault.JPG"]);
+                $st->execute([$email, $pw, $lastName, $firstName, $birth, $sex, "https://dragonhyun.com/images/profileMaleDefault.JPG"]);
             }
         }else if($sex == null && $profileImage != null){
-            $query = "insert into user (email, pw, lName, fName, birth, profileImage) values (?, ?, ?, ?, ?, ?);";
+            $query = "insert into user (email, pw, lastName, firstName, birth, profileImage) values (?, ?, ?, ?, ?, ?);";
             
             /*
              * 추후 upload기능 완성시키면 수정할 것.
@@ -34,12 +34,12 @@ function createUser($email, $pw, $lName, $fName, $sex, $birth, $profileImage){
              */
 
             $st = $pdo->prepare($query);
-            $st->execute([$email, $pw, $lName, $fName, $birth, $profileImage]);
+            $st->execute([$email, $pw, $lastName, $firstName, $birth, $profileImage]);
         }else{
-            $query = "insert into user (email, pw, lName, fName, birth, sex, profileImage) values (?, ?, ?, ?, ?, ?, ?);";
+            $query = "insert into user (email, pw, lastName, firstName, birth, sex, profileImage) values (?, ?, ?, ?, ?, ?, ?);";
 
             $st = $pdo->prepare($query);
-            $st->execute([$email, $pw, $lName, $fName, $birth, $sex, $profileImage]);
+            $st->execute([$email, $pw, $lastName, $firstName, $birth, $sex, $profileImage]);
         }
 
         $query = "select no from user where email=?;";
@@ -121,7 +121,7 @@ function setInitialGoal($userNo, $exerciseType, $termType, $termValue, $measureT
 function userProfile($userNo){
     $pdo = pdoSqlConnect();
 
-    $query = "select profileImage, fName, lName, createdAt from user where no=?;";
+    $query = "select profileImage, firstName, lastName, createdAt from user where no=?;";
 
     $st = $pdo->prepare($query);
     $st->execute([$userNo]);
@@ -135,13 +135,13 @@ function userProfile($userNo){
     return $res;
 }
 
-function editProfile($profileImage, $lName, $fName, $sex, $email, $birth, $height, $heightType, $weight, $weightType, $userEmail){
+function editProfile($profileImage, $lastName, $firstName, $sex, $email, $birth, $height, $heightType, $weight, $weightType, $userEmail){
     $pdo = pdoSqlConnect();
 
-    $query = "update user set profileImage=?, lName=?, fName=?, sex=?, email=?, birth=?, height=?, heightType=?, weight=?, weightType=? where email=?;";
+    $query = "update user set profileImage=?, lastName=?, firstName=?, sex=?, email=?, birth=?, height=?, heightType=?, weight=?, weightType=? where email=?;";
 
     $st = $pdo->prepare($query);
-    $st->execute([$profileImage, $lName, $fName, $sex, $email, $birth, $height, $heightType, $weight, $weightType, $userEmail]);
+    $st->execute([$profileImage, $lastName, $firstName, $sex, $email, $birth, $height, $heightType, $weight, $weightType, $userEmail]);
 
     $st = null;
     $pdo = null;
@@ -152,10 +152,10 @@ function editProfile($profileImage, $lName, $fName, $sex, $email, $birth, $heigh
 function userFriend($userEmail){
     $pdo = pdoSqlConnect();
 
-    $query = "select no as friendNo, lName, fName, profileImage from user 
+    $query = "select no as friendNo, lastName, firstName, profileImage from user 
 inner join (select followingNo as friendNo, followerNo as myNo from friend inner join user u on friend.followerNo = u.no and u.email = ?) a on user.no = a.friendNo
 union
-select no as friendNo, lName, fName, profileImage from user 
+select no as friendNo, lastName, firstName, profileImage from user 
 inner join (select followerNo as friendNo, followingNo as myNo from friend inner join user u on friend.followingNo = u.no and u.email = ?) a on user.no = a.friendNo;";
 
     $st = $pdo->prepare($query);
@@ -190,7 +190,7 @@ function addFriend($userEmail, $userNo){
 function requestedFriend($userEmail){
     $pdo = pdoSqlConnect();
 
-    $query = "select requestNo, no as senderNo, lName, fName, profileImage from user 
+    $query = "select requestNo, no as senderNo, lastName, firstName, profileImage from user 
 inner join (select friendRequest.no as requestNo, senderNo, receiverNo from friendRequest inner join user u on friendRequest.receiverNo = u.no and u.email=?) f on f.senderNo = user.no;";
 
     $st = $pdo->prepare($query);
@@ -456,6 +456,32 @@ function addActivity($userEmail, $sneakersNo, $distance, $eTime, $calorie, $aver
         $st = $pdo->prepare($query);
         $st->execute([$distance, $sneakersNo]);
     }
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function userActivity($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query = "";
+}
+
+function editActivity($userEmail, $activityNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "";
+}
+
+function deleteActivity($userEmail, $activityNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "delete from activity where no = ? and userNo in (select no as userNo from user where email = ?);";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$activityNo, $userEmail]);
 
     $st = null;
     $pdo = null;
