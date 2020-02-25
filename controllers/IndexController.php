@@ -184,7 +184,7 @@ try {
 
             if(isExistUser($userNo)) {
                 $res->result = userProfile($userNo);
-                $res->result[0]['createdAt'] = substr(str_replace("-", "", $res->result[0]['createdAt']), 0, 8);
+                $res->result['createdAt'] = substr(str_replace("-", "", $res->result['createdAt']), 0, 8);
                 $res->isSuccess = TRUE;
                 $res->code = 100;
                 $res->message = "프로필 조회 성공";
@@ -217,6 +217,33 @@ try {
                 $res->message = "프로필 편집 성공";
             }
             echo json_encode($res, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            break;
+
+        case "searchFriend":
+            http_response_code(200);
+            $query = $_GET["query"];
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $res->result = searchFriend($query);
+
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "검색결과 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
         case "userFriend":
@@ -351,7 +378,7 @@ try {
 
             if($res->result == null){
                 $res->isSuccess = TRUE;
-                $res->code = 100;
+                $res->code = 101;
                 $res->message = "브랜드 검색 결과가 없습니다.";
             }else{
                 $res->isSuccess = TRUE;
@@ -379,7 +406,7 @@ try {
 
             if($res->result == null){
                 $res->isSuccess = TRUE;
-                $res->code = 100;
+                $res->code = 101;
                 $res->message = "모델 검색 결과가 없습니다.";
             }else{
                 $res->isSuccess = TRUE;
@@ -560,7 +587,7 @@ try {
             if($result == 100){
                 $res->isSuccess = TRUE;
                 $res->code = 100;
-                $res->message = "초기 목표 설정 성공";
+                $res->message = "목표 설정 성공";
             }
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
@@ -579,7 +606,7 @@ try {
             }
             $userEmail = $result->info->email;
 
-            $result = addActivity($userEmail, $req->sneakersNo, $req->distance, $req->exerciseTfime, $req->calorie, $req->averagePace, $req->averageSpeed, $req->maxSpeed, $req->exerciseType, $req->goalType, $req->goalNo, $req->facialEmoticon, $req->placeEmoticon, $req->weather, $req->temperature, $req->imageUrl, $req->memo);
+            $result = addActivity($userEmail, $req->sneakersNo, $req->distance, $req->exerciseTime, $req->calorie, $req->averagePace, $req->averageSpeed, $req->maxSpeed, $req->exerciseType, $req->goalType, $req->goalNo, $req->facialEmoticon, $req->placeEmoticon, $req->weather, $req->temperature, $req->imageUrl, $req->memo);
 
             if($result == 100){
                 $res->isSuccess = TRUE;

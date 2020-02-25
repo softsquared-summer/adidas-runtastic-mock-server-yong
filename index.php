@@ -27,6 +27,7 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/profile/{userNo}', ['IndexController', 'userProfile']);   #추후에 친구인지 아닌지에 따라 다른 화면 구현예정 우선은 프로필이미지, 이름, 회원가입일만 보임.
     $r->addRoute('PUT', '/profile', ['IndexController', 'editProfile']);
 
+    $r->addRoute('GET', '/search/friend', ['IndexController', 'searchFriend']);
     $r->addRoute('GET', '/friend', ['IndexController', 'userFriend']);
     $r->addRoute('POST', '/friend', ['IndexController', 'addFriend']);
     $r->addRoute('GET', '/friend/request', ['IndexController', 'requestedFriend']);
@@ -35,7 +36,7 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/sneakers/brand', ['IndexController', 'searchSneakersBrand']);
     $r->addRoute('GET', '/sneakers/model/{brandNo}', ['IndexController', 'searchSneakersModel']);
     $r->addRoute('POST', '/sneakers', ['IndexController', 'addSneakers']);
-    $r->addRoute('PUT', '/sneakers', ['IndexController', 'editSneakers']);
+    #$r->addRoute('PUT', '/sneakers', ['IndexController', 'editSneakers']);                         #아직 안함..
     $r->addRoute('DELETE', '/sneakers', ['IndexController', 'deleteSneakers']);
     $r->addRoute('GET', '/user/sneakers', ['IndexController', 'userSneakers']);
     $r->addRoute('GET', '/sneakers', ['IndexController', 'sneakersInfo']);      #추후에 sneakers관련된것중 활동, 운동km수 누적 구현해야함.

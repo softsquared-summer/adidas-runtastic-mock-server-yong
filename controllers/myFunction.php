@@ -132,7 +132,7 @@ function userProfile($userNo){
     $st = null;
     $pdo = null;
 
-    return $res;
+    return $res[0];
 }
 
 function editProfile($profileImage, $lastName, $firstName, $sex, $email, $birth, $height, $heightType, $weight, $weightType, $userEmail){
@@ -147,6 +147,30 @@ function editProfile($profileImage, $lastName, $firstName, $sex, $email, $birth,
     $pdo = null;
 
     return 100;
+}
+
+function searchFriend($search){
+    $pdo = pdoSqlConnect();
+    if(preg_match("/^[_\.0-9a-zA-Z-]+@([0-9a-zA-Z][0-9a-zA-Z-]+\.)+[a-zA-Z]{2,6}$/i", $search)){
+        $query = "select no as userNo, lastName, firstName, profileImage from user where email = ?;";
+        $st = $pdo->prepare($query);
+        $st->execute([$search]);
+    }else{
+        $query = "select no as userNo, lastName, firstName, profileImage from user where substring_index(?, ' ', 1) like firstName or substring_index(?, ' ', -1) like firstName;";
+        $st = $pdo->prepare($query);
+        $st->execute([$search, $search]);
+    }
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    if(sizeof($res) == 1)
+        return $res[0];
+    else
+        return $res;
 }
 
 function userFriend($userEmail){
@@ -439,16 +463,18 @@ function addGoal($userEmail, $exerciseType, $termType, $termValue, $measureType,
     return 100;
 }
 
-function addActivity($userEmail, $sneakersNo, $distance, $eTime, $calorie, $averagePace, $averageSpeed, $maxSpeed, $exerciseType, $goalType, $goalNo, $facialEmoticon, $placeEmoticon, $weather, $temperature, $imageUrl, $memo){
+function addActivity($userEmail, $sneakersNo, $distance, $exerciseTime, $calorie, $averagePace, $averageSpeed, $maxSpeed, $exerciseType, $goalType, $goalNo, $facialEmoticon, $placeEmoticon, $weather, $temperature, $imageUrl, $memo){
     $pdo = pdoSqlConnect();
 
-    $query = "insert into activity (userNo, sneakersNo, distance, eTime, calorie, averagePace, averageSpeed, maxSpeed, exerciseType, goalType,
-                      goalNo, facialEmoticon, placeEmoticon, weather, temperature, imageUrl, memo)
-                      select no as userNo, ? as sneakersNo, ? as distance, ? as eTime, ? as calorie, ? as averagePace, ? as averageSpeed, ? as maxSpeed, ? as exerciseType, ? as goalType,
-                             ? as goalNo, ? as facialEmotiocon, ? as placeEmoticon, ? as weather, ? as temperature, ? as imageurl, ? as memo from user where email=?;";
+    $query = "insert into activity (userNo, sneakersNo, distance, exerciseTime, calorie, averagePace, averageSpeed, maxSpeed, exerciseType, goalType,
+                      goalNo, facialEmoticon, placeEmoticon, weather, temperature, imageUrl, memo, startedAt)
+                      select no as userNo, ? as sneakersNo, ? as distance, ? as exerciseTime, ? as calorie, ? as averagePace, ? as averageSpeed, ? as maxSpeed, ? as exerciseType, ? as goalType,
+                             ? as goalNo, ? as facialEmotiocon, ? as placeEmoticon, ? as weather, ? as temperature, ? as imageurl, ? as memo,
+                             DATE_SUB(current_timestamp(), interval concat(if(cast(substr(?, 1, 2) as unsigned) > 24, concat(cast(substr(?, 1, 2) as unsigned) div 24, ' '), '0 '),
+    substr(makeTime(if(cast(substr(?, 1, 2) as unsigned) > 24, cast(substr(?, 1, 2) as unsigned) mod 24,substr(?, 1, 2)), substr(?, 3, 2), substr(?, 5, 2)), 1, 8)) day_second) as startedAt from user where email=?";
 
     $st = $pdo->prepare($query);
-    $st->execute([$sneakersNo, $distance, $eTime, $calorie, $averagePace, $averageSpeed, $maxSpeed, $exerciseType, $goalType, $goalNo, $facialEmoticon, $placeEmoticon, $weather, $temperature, $imageUrl, $memo, $userEmail]);
+    $st->execute([$sneakersNo, $distance, $exerciseTime, $calorie, $averagePace, $averageSpeed, $maxSpeed, $exerciseType, $goalType, $goalNo, $facialEmoticon, $placeEmoticon, $weather, $temperature, $imageUrl, $memo, $exerciseTime, $exerciseTime, $exerciseTime, $exerciseTime, $exerciseTime, $exerciseTime, $exerciseTime, $userEmail]);
 
     if($sneakersNo != null){
         $query = "update userSneakers set totalDistance = totalDistance + ? where no = ?;";
