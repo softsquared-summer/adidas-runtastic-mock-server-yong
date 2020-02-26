@@ -46,7 +46,6 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
 
     $r->addRoute('POST', '/activity', ['IndexController', 'addActivity']);
 
-
     $r->addRoute('GET', '/user/activity', ['IndexController', 'userActivity']);
     #$r->addRoute('GET', '/activity/{activityNo}', ['IndexController', 'activityInfo']);
     $r->addRoute('PUT', '/activity', ['IndexController', 'editActivity']);

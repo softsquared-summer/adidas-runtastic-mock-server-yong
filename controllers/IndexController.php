@@ -437,7 +437,7 @@ try {
             }
 
             $userEmail = $result->info->email;
-            $result = addSneakers($userEmail, $req->modelNo, $req->nickname, $req->imageUrl, $req->sizeType, $req->sizeValue, $req->colorNo, $req->startedAt, $req->limitDistance);
+            $result = addSneakers($userEmail, $req->modelNo, $req->nickname, $req->imageUrl, $req->sizeType, $req->sizeValue, $req->colorNo, $req->startedAt, $req->initDistance, $req->limitDistance);
             
             if($result = 100){
                 $res->isSuccess = TRUE;
@@ -657,7 +657,7 @@ try {
                 return;
             }
             $userEmail = $result->info->email;
-            $result = editActivity($userEmail, $req->activityNo);
+            $result = editActivity($req->activityNo, $req->startedAt, $req->sneakersNo, $req->distance, $req->exerciseTime, $req->calorie, $req->exerciseType, $req->facialEmoticon, $req->placeEmoticon, $req->weather, $req->temperature, $req->imageUrl, $req->memo);
 
             if($result == 100){
                 $res->isSuccess = TRUE;
