@@ -118,21 +118,41 @@ function setInitialGoal($userNo, $exerciseType, $termType, $termValue, $measureT
     return 100;
 }
 
-function userProfile($userNo){
+function userProfile($userEmail, $userNo){
     $pdo = pdoSqlConnect();
 
-    $query = "select profileImage, firstName, lastName, createdAt from user where no=?;";
+    $query = "select userNo, email, lastName, firstName, profileImage, createdAt, sum(distance) as totalDistance
+from (select user.no as userNo, email, lastName, firstName, profileImage, user.createdAt as createdAt, ifnull(distance, 0) as distance from user
+    left outer join activity a on user.no = a.userNo) t where t.email = ? or t.userNo = ? group by t.userNo;";
 
     $st = $pdo->prepare($query);
-    $st->execute([$userNo]);
+    $st->execute([$userEmail, $userNo]);
 
     $st->setFetchMode(PDO::FETCH_ASSOC);
     $res = $st->fetchAll();
 
+    $data = array();
+    $data['targetInfo'] = array();
+    $data['myInfo'] = array();
+    foreach($res as $r){
+        if($r['email'] == $userEmail){
+            array_push($data['myInfo'] = $r);
+        }else{
+            array_push($data['targetInfo'] = $r);
+        }
+    }
+    if($data['myInfo']['totalDistance'] > $data['targetInfo']['totalDistance']){
+        $data['myInfo']['rank'] = 1;
+        $data['targetInfo']['rank'] = 2;
+    }else{
+        $data['targetInfo']['rank'] = 1;
+        $data['myInfo']['rank'] = 2;
+    }
+    $data['targetInfo']['createdAt'] = substr($data['targetInfo']['createdAt'], 0, 4).' '.substr($data['targetInfo']['createdAt'], 5, 2).', '.substr($data['targetInfo']['createdAt'], 8, 2);
     $st = null;
     $pdo = null;
 
-    return $res[0];
+    return $data;
 }
 
 function editProfile($profileImage, $lastName, $firstName, $sex, $email, $birth, $height, $heightType, $weight, $weightType, $userEmail){
@@ -354,6 +374,28 @@ function addSneakers($userEmail, $modelNo, $nickname, $imageUrl, $sizeType, $siz
     return 100;
 }
 
+function editSneakers($userEmail, $sneakersNo, $modelNo, $nickname, $imageUrl, $sizeType, $sizeValue, $colorNo, $limitDistance){
+    $pdo = pdoSqlConnect();
+
+    if($nickname == null){
+        $query = "update userSneakers set modelNo = ?, nickname = (select modelName as nickname from sneakersModel where no =?), imageUrl = ?, sizeType = ?, sizeValue = ?, colorNo = ?, limitDistance = ?
+where no = ? and userNo in (select no as userNo from user where email = ?);";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$modelNo, $modelNo, $imageUrl, $sizeType, $sizeValue, $colorNo, $limitDistance, $sneakersNo, $userEmail]);
+    }else{
+        $query = "update userSneakers set modelNo = ?, nickname = ?, imageUrl = ?, sizeType = ?, sizeValue = ?, colorNo = ?, limitDistance = ? 
+where no = ? and userNo in (select no as userNo from user where email = ?);";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$modelNo, $nickname, $imageUrl, $sizeType, $sizeValue, $colorNo, $limitDistance, $sneakersNo, $userEmail]);
+    }
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
 function deleteSneakers($userEmail, $sneakersNo){
     $pdo = pdoSqlConnect();
 
@@ -424,7 +466,7 @@ function sneakersInfo($userEmail, $sneakersNo){
 function userGoal($userEmail){
     $pdo = pdoSqlConnect();
 
-    $query = "select termValue,
+    $query = "select userGoal.no as goalNo, termValue,
        case
            when termType = 1 then '오늘'
            when termType = 2 then '이번 주'
@@ -439,7 +481,7 @@ function userGoal($userEmail){
            when measureType = 2 then concat('목표: ', concat(concat(substr(measureValue, 1, 2), ':'), substr(measureValue, 3, 2)))
            when measureType = 3 then concat('목표: ', concat(measureValue, ' 회'))
            end as goalName,
-       measureValue, measureType, exerciseName, exerciseType from userGoal
+       measureValue, measureType, exerciseName, exerciseType, isTerminate from userGoal
     inner join user u on userGoal.userNo = u.no and u.email = ?
     inner join exercise e on userGoal.exerciseType = e.no;";
 
@@ -474,6 +516,34 @@ function addGoal($userEmail, $exerciseType, $termType, $termValue, $measureType,
         $st = $pdo->prepare($query);
         $st->execute([$exerciseType, $termType, $measureType, $measureValue, $userEmail]);
     }
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function deleteGoal($userEmail, $goalNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "delete from userGoal where no = ? and userNo in (select no as userNo from user where email = ?);";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$goalNo, $userEmail]);
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function terminateGoal($userEmail, $goalNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "update userGoal set isTerminate = 1 where no = ? and userNo in (select no from user where email = ?);";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$goalNo, $userEmail]);
 
     $st = null;
     $pdo = null;

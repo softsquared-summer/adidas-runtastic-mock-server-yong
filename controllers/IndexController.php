@@ -180,11 +180,11 @@ try {
                 addErrorLogs($errorLogs, $res, $req);
                 return;
             }
+            $userEmail = $result->info->email;
             $userNo = $vars["userNo"];
 
             if(isExistUser($userNo)) {
-                $res->result = userProfile($userNo);
-                $res->result['createdAt'] = substr(str_replace("-", "", $res->result['createdAt']), 0, 8);
+                $res->result = userProfile($userEmail, $userNo);
                 $res->isSuccess = TRUE;
                 $res->code = 100;
                 $res->message = "프로필 조회 성공";
@@ -447,6 +447,30 @@ try {
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
+        case "editSneakers":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $userEmail = $result->info->email;
+            $result = editSneakers($userEmail, $req->sneakersNo, $req->modelNo, $req->nickname, $req->imageUrl, $req->sizeType, $req->sizeValue, $req->colorNo, $req->limitDistance);
+
+            if($result = 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "운동화 수정 성공";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
         case "deleteSneakers":
             http_response_code(200);
             $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
@@ -591,6 +615,66 @@ try {
             }
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
+            
+        case "deleteGoal":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+            
+            $result = deleteGoal($userEmail, $req->goalNo);
+            if($result == 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "목표 삭제 성공";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "terminateGoal":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+
+            $result = terminateGoal($userEmail, $req->goalNo);
+            if($result == 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "목표 종료 성공";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "goalInfo":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
 
         case "addActivity":
             http_response_code(200);
