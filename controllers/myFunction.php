@@ -120,39 +120,82 @@ function setInitialGoal($userNo, $exerciseType, $termType, $termValue, $measureT
 
 function userProfile($userEmail, $userNo){
     $pdo = pdoSqlConnect();
+    if(isFriend($userEmail, $userNo)) {
+        $query = "select userNo, email, lastName, firstName, profileImage, createdAt, substr(now(), 6, 2) as date, sum(distance) as totalDistance, if(sum(exerciseTime) = 0, 0, count(exerciseTime)) as activityCount, sum(substr(exerciseTime, 1, 2) * 3600 + substr(exerciseTime, 3, 2) * 60 + substr(exerciseTime, 5, 2)) as totalExerciseTime, sum(calorie) as totalCalorie
+from (select user.no as userNo, email, lastName, firstName, profileImage, user.createdAt as createdAt, ifnull(distance, 0) as distance, ifnull(calorie, 0) as calorie, ifnull(exerciseTime, 0) as exerciseTime from user
+    left outer join activity a on user.no = a.userNo and date_format(a.createdAt, '%m') = date_format(now(), '%m')) t where t.email = ? or t.userNo = ? group by t.userNo;";
 
-    $query = "select userNo, email, lastName, firstName, profileImage, createdAt, sum(distance) as totalDistance
-from (select user.no as userNo, email, lastName, firstName, profileImage, user.createdAt as createdAt, ifnull(distance, 0) as distance from user
-    left outer join activity a on user.no = a.userNo) t where t.email = ? or t.userNo = ? group by t.userNo;";
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail, $userNo]);
 
-    $st = $pdo->prepare($query);
-    $st->execute([$userEmail, $userNo]);
+        $st->setFetchMode(PDO::FETCH_ASSOC);
+        $res = $st->fetchAll();
 
-    $st->setFetchMode(PDO::FETCH_ASSOC);
-    $res = $st->fetchAll();
+        $query = "select no as activityNo, exerciseType, exerciseTime, distance, createdAt from activity where userNo = ? order by createdAt desc limit 1;";
 
-    $data = array();
-    $data['targetInfo'] = array();
-    $data['myInfo'] = array();
-    foreach($res as $r){
-        if($r['email'] == $userEmail){
-            array_push($data['myInfo'] = $r);
-        }else{
-            array_push($data['targetInfo'] = $r);
+        $st = $pdo->prepare($query);
+        $st->execute([$userNo]);
+
+        $st->setFetchMode(PDO::FETCH_ASSOC);
+        $rres = $st->fetchAll();
+
+        $data = array();
+        $data['targetInfo'] = array();
+        $data['myInfo'] = array();
+        foreach ($res as $r) {
+            if ($r['email'] == $userEmail) {
+                array_push($data['myInfo'] = $r);
+            } else {
+                array_push($data['targetInfo'] = $r);
+            }
         }
-    }
-    if($data['myInfo']['totalDistance'] > $data['targetInfo']['totalDistance']){
-        $data['myInfo']['rank'] = 1;
-        $data['targetInfo']['rank'] = 2;
-    }else{
-        $data['targetInfo']['rank'] = 1;
-        $data['myInfo']['rank'] = 2;
-    }
-    $data['targetInfo']['createdAt'] = substr($data['targetInfo']['createdAt'], 0, 4).' '.substr($data['targetInfo']['createdAt'], 5, 2).', '.substr($data['targetInfo']['createdAt'], 8, 2);
-    $st = null;
-    $pdo = null;
+        if ($data['myInfo']['totalDistance'] > $data['targetInfo']['totalDistance']) {
+            $data['myInfo']['rank'] = 1;
+            $data['targetInfo']['rank'] = 2;
+        } else {
+            $data['targetInfo']['rank'] = 1;
+            $data['myInfo']['rank'] = 2;
+        }
+        $data['targetInfo']['createdAt'] = substr($data['targetInfo']['createdAt'], 0, 4) . ' ' . substr($data['targetInfo']['createdAt'], 5, 2) . ', ' . substr($data['targetInfo']['createdAt'], 8, 2);
+        $data['targetInfo']['lastActivity'] = $rres;
+        $st = null;
+        $pdo = null;
 
-    return $data;
+        return $data;
+    }else{
+        $query = "select userNo, email, lastName, firstName, profileImage, createdAt, substr(now(), 6, 2) as date, sum(distance) as totalDistance 
+from (select user.no as userNo, email, lastName, firstName, profileImage, user.createdAt as createdAt, ifnull(distance, 0) as distance, ifnull(calorie, 0) as calorie, ifnull(exerciseTime, 0) as exerciseTime from user
+    left outer join activity a on user.no = a.userNo and date_format(a.createdAt, '%m') = date_format(now(), '%m')) t where t.email = ? or t.userNo = ? group by t.userNo;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail, $userNo]);
+
+        $st->setFetchMode(PDO::FETCH_ASSOC);
+        $res = $st->fetchAll();
+
+        $data = array();
+        $data['targetInfo'] = array();
+        $data['myInfo'] = array();
+        foreach ($res as $r) {
+            if ($r['email'] == $userEmail) {
+                array_push($data['myInfo'] = $r);
+            } else {
+                array_push($data['targetInfo'] = $r);
+            }
+        }
+        if ($data['myInfo']['totalDistance'] > $data['targetInfo']['totalDistance']) {
+            $data['myInfo']['rank'] = 1;
+            $data['targetInfo']['rank'] = 2;
+        } else {
+            $data['targetInfo']['rank'] = 1;
+            $data['myInfo']['rank'] = 2;
+        }
+        $data['targetInfo']['createdAt'] = substr($data['targetInfo']['createdAt'], 0, 4) . ' ' . substr($data['targetInfo']['createdAt'], 5, 2) . ', ' . substr($data['targetInfo']['createdAt'], 8, 2);
+        $st = null;
+        $pdo = null;
+
+        return $data;
+    }
 }
 
 function editProfile($profileImage, $lastName, $firstName, $sex, $email, $birth, $height, $heightType, $weight, $weightType, $userEmail){

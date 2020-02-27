@@ -70,3 +70,25 @@ function pwCheck($_str){
     }
      return array(true);
 }
+
+function isFriend($userEmail, $userNo){
+    $pdo = pdoSqlConnect();
+    $query = "select followingNo as friendNo, followerNo as myNo from friend inner join user u on friend.followerNo = u.no and u.email = ? and friend.followingNo = ?
+union
+select followerNo as friendNo, followingNo as myNo from friend inner join user u on friend.followingNo = u.no and u.email = ? and friend.followerNo = ?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail, $userNo, $userEmail, $userNo]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    if($res == null)
+        return false;
+    else
+        return true;
+
+}

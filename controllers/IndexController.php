@@ -318,7 +318,7 @@ try {
             }else{
                 $res->isSuccess = TRUE;
                 $res->code = 100;
-                $res->messgae = "친구요청 검색 결과.";
+                $res->message = "친구요청 검색 결과.";
             }
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
