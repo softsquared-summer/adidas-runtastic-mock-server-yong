@@ -361,6 +361,33 @@ try {
             echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;
 
+        case "deleteFriend":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+            $result = deleteFriend($userEmail, $req->friendNo);
+
+            if($result == 100){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "친구 삭제 성공";
+            }else if($result == 200){
+                $res->isSuccess = FALSE;
+                $res->code = 200;
+                $res->message = "친구 관계가 아닙니다";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
         case "searchSneakersBrand":
             http_response_code(200);
             $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
@@ -401,7 +428,7 @@ try {
                 addErrorLogs($errorLogs, $res, $req);
                 return;
             }
-            echo $brandNo;
+
             $res->result = searchSneakersModel($brandNo);
 
             if($res->result == null){
@@ -525,6 +552,7 @@ try {
 
         case "sneakersInfo":
             http_response_code(200);
+            $sneakersNo = $vars["sneakersNo"];
             $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
             $result = isValidHeader($jwt, JWT_SECRET_KEY);
             if (!$result->auth) {
@@ -537,7 +565,7 @@ try {
             }
             $userEmail = $result->info->email;
 
-            $res->result = sneakersInfo($userEmail, $req->sneakersNo);
+            $res->result = sneakersInfo($userEmail, $sneakersNo);
 
             if($res->result == null){
                 $res->isSuccess = TRUE;
@@ -664,6 +692,7 @@ try {
 
         case "goalInfo":
             http_response_code(200);
+            $goalNo = $vars["goalNo"];
             $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
             $result = isValidHeader($jwt, JWT_SECRET_KEY);
             if (!$result->auth) {
@@ -675,6 +704,20 @@ try {
                 return;
             }
             $userEmail = $result->info->email;
+
+            $res->result = goalInfo($userEmail, $goalNo);
+
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "검색 결과가 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
 
         case "addActivity":
             http_response_code(200);
@@ -702,6 +745,7 @@ try {
 
         case "userActivity":
             http_response_code(200);
+            $exerciseType = $_GET["exerciseType"];
             $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
             $result = isValidHeader($jwt, JWT_SECRET_KEY);
             if (!$result->auth) {
@@ -714,7 +758,36 @@ try {
             }
             $userEmail = $result->info->email;
 
-            $res->result = userActivity($userEmail);
+            $res->result = userActivity($userEmail, $exerciseType);
+
+            if($res->result == null){
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->message = "검색 결과가 없습니다.";
+            }else{
+                $res->isSuccess = TRUE;
+                $res->code = 100;
+                $res->messgae = "검색 결과.";
+            }
+            echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            break;
+
+        case "activityInfo":
+            http_response_code(200);
+            $activityNo = $vars["activityNo"];
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+            $result = isValidHeader($jwt, JWT_SECRET_KEY);
+            if (!$result->auth) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+            $userEmail = $result->info->email;
+
+            $res->result =activityInfo($userEmail, $activityNo);
 
             if($res->result == null){
                 $res->isSuccess = TRUE;

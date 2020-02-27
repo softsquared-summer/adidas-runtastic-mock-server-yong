@@ -24,15 +24,15 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('PUT', '/user/body/initial', ['IndexController', 'setInitialBody']);
     $r->addRoute('POST', '/user/goal/initial', ['IndexController', 'setInitialGoal']);
 
-    $r->addRoute('GET', '/profile/{userNo}', ['IndexController', 'userProfile']);   #추후에 친구인지 아닌지에 따라 다른 화면 구현예정 우선은 프로필이미지, 이름, 회원가입일만 보임.
+    $r->addRoute('GET', '/profile/{userNo}', ['IndexController', 'userProfile']);
     $r->addRoute('PUT', '/profile', ['IndexController', 'editProfile']);
-;
 
     $r->addRoute('GET', '/search/friend', ['IndexController', 'searchFriend']);
     $r->addRoute('GET', '/friend', ['IndexController', 'userFriend']);
     $r->addRoute('POST', '/friend', ['IndexController', 'addFriend']);
     $r->addRoute('GET', '/friend/request', ['IndexController', 'requestedFriend']);
     $r->addRoute('DELETE', '/friend/request/{type}', ['IndexController', 'acceptOrDenyRequest']);
+    $r->addRoute('DELETE', '/friend', ['IndexController', 'deleteFriend']);
 
     $r->addRoute('GET', '/sneakers/brand', ['IndexController', 'searchSneakersBrand']);
     $r->addRoute('GET', '/sneakers/model/{brandNo}', ['IndexController', 'searchSneakersModel']);
@@ -40,20 +40,28 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('PUT', '/sneakers', ['IndexController', 'editSneakers']);
     $r->addRoute('DELETE', '/sneakers', ['IndexController', 'deleteSneakers']);
     $r->addRoute('GET', '/user/sneakers', ['IndexController', 'userSneakers']);
-    $r->addRoute('GET', '/sneakers', ['IndexController', 'sneakersInfo']);
+    $r->addRoute('GET', '/sneakers/{sneakersNo}', ['IndexController', 'sneakersInfo']);
 
     $r->addRoute('GET', '/goal', ['IndexController', 'userGoal']);
     $r->addRoute('POST', '/goal', ['IndexController', 'addGoal']);
     $r->addRoute('DELETE', '/goal', ['IndexController', 'deleteGoal']);
     $r->addRoute('PUT', '/goal', ['IndexController', 'terminateGoal']);
-    #$r->addRoute('GET', '/goal/{goalNo}', ['IndexController', 'goalInfo']);
+    $r->addRoute('GET', '/goal/{goalNo}', ['IndexController', 'goalInfo']);
 
     $r->addRoute('POST', '/activity', ['IndexController', 'addActivity']);
-
     $r->addRoute('GET', '/user/activity', ['IndexController', 'userActivity']);
-    #$r->addRoute('GET', '/activity/{activityNo}', ['IndexController', 'activityInfo']);
+    $r->addRoute('GET', '/activity/{activityNo}', ['IndexController', 'activityInfo']);
     $r->addRoute('PUT', '/activity', ['IndexController', 'editActivity']);
     $r->addRoute('DELETE', '/activity', ['IndexController', 'deleteActivity']);
+
+    #$r->addRoute('GET', '/leaderboard', ['IndexController', 'leaderboard']);
+    #$r->addRoute('GET', '/statistic', ['IndexController', 'statistic']);
+    #$r->addRoute('GET', '/group', ['IndexController', 'userGroup']);
+    #$r->addRoute('POST', '/group', ['IndexController', 'addGroup']);
+    #$r->addRoute('GET', '/progress-status', ['IndexController', 'progressStatus']);
+    #$r->addRoute('GET', '/newsfeed', ['IndexController', 'newsfeed']);
+
+
 
     $r->addRoute('POST', '/upload/{type}', ['IndexController', 'uploadImage']);
 

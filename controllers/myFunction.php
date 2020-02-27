@@ -230,10 +230,7 @@ function searchFriend($search){
     $st = null;
     $pdo = null;
 
-    if(sizeof($res) == 1)
-        return $res[0];
-    else
-        return $res[0];
+    return $res;
 }
 
 function userFriend($userEmail){
@@ -255,7 +252,7 @@ inner join (select followerNo as friendNo, followingNo as myNo from friend inner
     $pdo = null;
 
     if(sizeof($res) == 1)
-       return $res[0];
+       return $res;
     else if ($res == null)
         return $res[0];
     else
@@ -292,7 +289,7 @@ inner join (select friendRequest.no as requestNo, senderNo, receiverNo from frie
     $pdo = null;
 
     if(sizeof($res) == 1)
-        return $res[0];
+        return $res;
     else if ($res == null)
         return $res[0];
     else
@@ -336,6 +333,25 @@ function acceptOrDenyRequest($requestNo, $type){
     return $code;
 }
 
+function deleteFriend($userEmail, $friendNo){
+    $pdo = pdoSqlConnect();
+    if(isFriend($userEmail, $friendNo)){
+        $query = "delete from friend where no in (select no from (select friend.no as no from friend inner join user u on friend.followerNo = u.no and u.email = ? and friend.followingNo = ?
+    union
+    select friend.no as no from friend inner join user u on friend.followingNo = u.no and u.email = ? and friend.followerNo = ?) t);";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail, $friendNo, $userEmail, $friendNo]);
+    }else{
+        return 200;
+    }
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
 function searchSneakersBrand(){
     $pdo = pdoSqlConnect();
 
@@ -351,7 +367,7 @@ function searchSneakersBrand(){
     $pdo = null;
 
     if(sizeof($res) == 1)
-        return $res[0];
+        return $res;
     else if ($res == null)
         return $res[0];
     else
@@ -373,7 +389,7 @@ function searchSneakersModel($brandNo){
     $pdo = null;
 
     if(sizeof($res) == 1)
-        return $res[0];
+        return $res;
     else if ($res == null)
         return $res[0];
     else
@@ -457,7 +473,7 @@ function deleteSneakers($userEmail, $sneakersNo){
 function userSneakers($userEmail){
     $pdo = pdoSqlConnect();
 
-    $query = "select sneakersNo, userNo, nickname, imageUrl, initDistance+sum(t.distance) as totalDistance, limitDistance
+    $query = "select sneakersNo, userNo, nickname, imageUrl, round(initDistance+sum(t.distance), 2) as totalDistance, limitDistance
 from (select userSneakers.no as sneakersNo, userSneakers.userNo, nickname, userSneakers.imageUrl, initDistance, ifnull(a.distance, 0) as distance,
        limitDistance from userSneakers
 inner join user u on userSneakers.userNo = u.no and u.email = ?
@@ -473,7 +489,7 @@ left outer join activity a on userSneakers.no = a.sneakersNo) t group by t.sneak
     $pdo = null;
 
     if(sizeof($res) == 1)
-        return $res[0];
+        return $res;
     else if ($res == null)
         return $res[0];
     else
@@ -483,7 +499,7 @@ left outer join activity a on userSneakers.no = a.sneakersNo) t group by t.sneak
 function sneakersInfo($userEmail, $sneakersNo){
     $pdo = pdoSqlConnect();
 
-    $query = "select nickname, modelName, imageUrl, initDistance+sum(t.distance) as totalDistance, limitDistance, startedAt from (select userSneakers.no as sneakersNo, nickname, modelName, userSneakers.imageUrl as imageUrl, initDistance, ifnull(a.distance, 0) as distance, limitDistance, userSneakers.startedAt from userSneakers
+    $query = "select nickname, modelName, imageUrl, round(initDistance+sum(t.distance), 2) as totalDistance, limitDistance, startedAt from (select userSneakers.no as sneakersNo, nickname, modelName, userSneakers.imageUrl as imageUrl, initDistance, ifnull(a.distance, 0) as distance, limitDistance, userSneakers.startedAt from userSneakers
     inner join user u on userSneakers.userNo = u.no and u.email = ? and userSneakers.no = ?
     inner join sneakersModel sM on userSneakers.modelNo = sM.no
     inner join sneakersBrand sB on sM.brandNo = sB.no
@@ -498,12 +514,7 @@ function sneakersInfo($userEmail, $sneakersNo){
     $st = null;
     $pdo = null;
 
-    if(sizeof($res) == 1)
-        return $res[0];
-    else if ($res == null)
-        return $res[0];
-    else
-        return $res;
+    return $res[0];
 }
 
 function userGoal($userEmail){
@@ -538,7 +549,7 @@ function userGoal($userEmail){
     $pdo = null;
 
     if(sizeof($res) == 1)
-        return $res[0];
+        return $res;
     else if ($res == null)
         return $res[0];
     else
@@ -594,6 +605,75 @@ function terminateGoal($userEmail, $goalNo){
     return 100;
 }
 
+function goalInfo($userEmail, $goalNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "select exerciseName, goalDate, totalDistance, concat(totalExerciseTime div 3600, ':', totalExerciseTime mod 3600 div 60) as totalExerciseTime, activityCount, goalValue,
+       case
+           when measureType = 1 then if(round(measureValue - totalDistance, 2) < 0, concat(round(measureValue - totalDistance) * -1, 'km 목표 초과'), concat(round(measureValue - totalDistance), 'km 남은 목표'))
+           when measureType = 2 then if((substr(measureValue, 1, 2) * 3600 + substr(measureValue, 3, 2) * 60) < totalExerciseTime, concat((totalExerciseTime - (substr(measureValue, 1, 2) * 3600 + substr(measureValue, 3, 2) * 60) div 3600), ':', (totalExerciseTime - (substr(measureValue, 1, 2) * 3600 + substr(measureValue, 3, 2) * 60)) mod 3600 div 60, ' 목표 초과'), concat(((substr(measureValue, 1, 2) * 3600 + substr(measureValue, 3, 2) * 60) - totalExerciseTime) div 3600, ':', ((substr(measureValue, 1, 2) * 3600 + substr(measureValue, 3, 2) * 60) - totalExerciseTime) mod 3600 div 60, ' 남은 목표'))
+           when measureType = 3 then if(measureValue < activityCount, concat(activityCount - measureValue, '회 목표 초과'), concat(measureValue - activityCount, '회 남은 목표'))
+           end as leftGoalValue,
+       case
+           when termType = 1 then concat(substr(replace(now(), '-', '. '), 1, 12), '. 목표 시작됨')
+           when termType = 2 then concat(substr(replace(adddate(now(), -weekday(now()) - 1), '-', '. '), 1, 12), '. 목표 시작됨')
+           when termType = 3 then concat(substr(replace(last_day(now() - interval 1 month) + interval 1 day, '-', '. '), 1, 12), '. 목표 시작됨')
+           when termType = 4 then concat(substr(now(), 1, 4), '. 01. 01. 목표 시작됨')
+           when termType = 5 then concat(substr(replace(goalCreated, '-', '. '), 1, 12), '. 목표 시작됨')
+           end as goalStarted,
+       case
+           when timestampdiff(day, now(), goalEnded) < 1 then if(timestampdiff(minute, now(), date_format(concat(substr(now(), 1, 11), '23:59'), '%y-%m-%d %H:%i')) < 60,
+               concat('00:', timestampdiff(minute, now(), date_format(concat(substr(now(), 1, 11), '23:59'), '%y-%m-%d %H:%i')), ' 남음'), concat(timestampdiff(minute, now(), date_format(concat(substr(now(), 1, 11), '23:59'), '%y-%m-%d %H:%i')) div 60, ':', timestampdiff(minute, now(), date_format(concat(substr(now(), 1, 11), '23:59'), '%y-%m-%d %H:%i')) mod 60, ' 남음'))
+           else
+               concat(timestampdiff(day, now(), goalEnded), ' 일 남음')
+           end as goalEnd, concat(substr(termValue, 1, 4), '. ', substr(termValue, 5, 2), '. ', substr(termValue, 7, 2), '. 목표일') as goalRemain
+from (select userNo, exerciseName,
+        case
+           when termType = 1 then '오늘'
+           when termType = 2 then '이번 주'
+           when termType = 3 then '이번 달'
+           when termType = 4 then '올해'
+           else concat(substr(termValue, 1, 4), '. ', if(substr(termValue, 5, 1) = 0, substr(termValue, 6, 1), substr(termValue, 5, 2)), '. ', substr(termValue, 7, 2), '.')
+           end as goalDate,
+       case
+           when measureType = 1 then concat('목표: ', measureValue, ' km')
+           when measureType = 2 then concat('목표: ', substr(measureValue, 1, 2), ':', substr(measureValue, 3, 2))
+           when measureType = 3 then concat('목표: ', measureValue, ' 회')
+           end as goalValue,
+       sum(distance) as totalDistance,
+       sum(substr(exerciseTime, 1, 2) * 3600 + substr(exerciseTime, 3, 2) * 60 + substr(exerciseTime, 5, 2)) as totalExerciseTime,
+       if(sum(exerciseTime) = 0, 0, count(exerciseTime)) as activityCount, termType, termValue, measureType, measureValue, goalCreated,
+             case
+                 when termType = 1 then date_format(concat(substr(now(), 1, 11), '23:59'), '%y-%m-%d %H:%i:%s')
+                 when termType = 2 then date_format(concat(substr(adddate(now(), - weekday(now()) + 5), 1, 11), '23:59'), '%y-%m-%d %H:%i:%s')
+                 when termType = 3 then date_format(concat(last_day(now()), ' 23:59'), '%y-%m-%d %H:%i:%s')
+                 when termType = 4 then date_format(concat(substr(now(), 1, 4), '-12-31 23:59:59'), '%y-%m-%d %H:%i:%s')
+                 when termType = 5 then date_sub(date_format(concat(substr(termValue, 1, 4), '-', substr(termValue, 5, 2), '-', substr(termValue, 7, 2), ' 23:59:59'), '%y-%m-%d %H:%i:%s'), interval 1 day)
+                 end as goalEnded
+from (select userGoal.userNo as userNo, e.exerciseName as exerciseName, termType, termValue, measureType, measureValue,
+             ifnull(distance, 0) as distance, ifnull(exerciseTime, 0) as exerciseTime, userGoal.createdAt as goalCreated from userGoal
+    inner join user u on userGoal.userNo = u.no and u.email = ? and userGoal.no = ?
+    inner join exercise e on userGoal.exerciseType = e.no
+    left outer join activity a on u.no = a.userNo and userGoal.exerciseType = a.exerciseType and
+                                  case
+                                      when termType = 1 then date_format(a.createdAt, '%m %d') = date_format(now(), '%m %d')
+                                      when termType = 2 then yearweek(a.createdAt) = yearweek(now())
+                                      when termType = 3 then a.createdAt > last_day(now() - interval 1 month) and a.createdAt <= last_day(now())
+                                      when termType = 4 then date_format(a.createdAt, '%y') = date_format(now(), '%y')
+                                      when termType = 5 then a.createdAt between date_format(userGoal.createdAt, '%y-%m-%d') and date_format(userGoal.termValue, '%y-%m-%d')
+                                    end
+    ) t group by t.userNo) tt;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail, $goalNo]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    return $res[0];
+
+}
+
 function addActivity($userEmail, $sneakersNo, $distance, $exerciseTime, $calorie, $averagePace, $averageSpeed, $maxSpeed, $exerciseType, $goalType, $goalNo, $facialEmoticon, $placeEmoticon, $weather, $temperature, $imageUrl, $memo){
     $pdo = pdoSqlConnect();
 
@@ -613,52 +693,128 @@ function addActivity($userEmail, $sneakersNo, $distance, $exerciseTime, $calorie
     return 100;
 }
 
-function userActivity($userEmail){
+function userActivity($userEmail, $exerciseType){
     $pdo = pdoSqlConnect();
-
-    $query = "select concat(month(createdAt), '월 ', year(createdAt)) date, count(*) as totalActivity, sum(distance) as totalDistance
+    if($exerciseType == null){
+        $query = "select concat(month(createdAt), '월 ', year(createdAt)) date, count(*) as totalActivity, round(sum(distance), 2) as totalDistance
 from (select activity.no as activityNo, u.no as userNo, distance, activity.createdAt as createdAt from activity inner join user u on activity.userNo = u.no and u.email = ?) a group by date order by date desc;";
 
-    $st = $pdo->prepare($query);
-    $st->execute([$userEmail]);
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail]);
 
-    $st->setFetchMode(PDO::FETCH_ASSOC);
-    $res = $st->fetchAll();
+        $st->setFetchMode(PDO::FETCH_ASSOC);
+        $res = $st->fetchAll();
 
-    $query = "select
+        $query = "select
        activity.no as activityNo,
        exerciseType,
-       distance,
+       round(distance, 2) as distance,
        exerciseTime,
        weather,
        replace(substr(activity.createdAt, 1, 10), '-', ' .') as exerciseDate,
        concat(month(activity.createdAt), '월 ', year(activity.createdAt)) as date
 from activity inner join user u on activity.userNo = u.no and u.email = ? order by activity.createdAt desc;";
 
-    $st = $pdo->prepare($query);
-    $st->execute([$userEmail]);
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail]);
 
-    $st->setFetchMode(PDO::FETCH_ASSOC);
-    $item = $st->fetchAll();
+        $st->setFetchMode(PDO::FETCH_ASSOC);
+        $item = $st->fetchAll();
 
-    foreach($res as $key => $value){
-        $res[$key]['item'] = array();
-        foreach($item as $i){
-            if($res[$key]['date'] == $i['date']){
-                array_push($res[$key]['item'], $i);
+        foreach($res as $key => $value){
+            $res[$key]['item'] = array();
+            foreach($item as $i){
+                if($res[$key]['date'] == $i['date']){
+                    array_push($res[$key]['item'], $i);
+                }
             }
         }
+
+        $st = null;
+        $pdo = null;
+
+        if(sizeof($res) == 1)
+            return $res;
+        else if ($res == null)
+            return $res[0];
+        else
+            return $res;
+    }else{
+        $query = "select concat(month(createdAt), '월 ', year(createdAt)) date, count(*) as totalActivity, round(sum(distance), 2) as totalDistance
+from (select activity.no as activityNo, u.no as userNo, distance, activity.createdAt as createdAt from activity inner join user u on activity.userNo = u.no and u.email = ? and activity.exerciseType = ?) a group by date order by date desc;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail, $exerciseType]);
+
+        $st->setFetchMode(PDO::FETCH_ASSOC);
+        $res = $st->fetchAll();
+
+        $query = "select
+       activity.no as activityNo,
+       exerciseType,
+       round(distance, 2) as distance,
+       exerciseTime,
+       weather,
+       replace(substr(activity.createdAt, 1, 10), '-', ' .') as exerciseDate,
+       concat(month(activity.createdAt), '월 ', year(activity.createdAt)) as date
+from activity inner join user u on activity.userNo = u.no and u.email = ? and activity.exerciseType = ? order by activity.createdAt desc;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail, $exerciseType]);
+
+        $st->setFetchMode(PDO::FETCH_ASSOC);
+        $item = $st->fetchAll();
+
+        foreach($res as $key => $value){
+            $res[$key]['item'] = array();
+            foreach($item as $i){
+                if($res[$key]['date'] == $i['date']){
+                    array_push($res[$key]['item'], $i);
+                }
+            }
+        }
+
+        $st = null;
+        $pdo = null;
+
+        if(sizeof($res) == 1)
+            return $res;
+        else if ($res == null)
+            return $res[0];
+        else
+            return $res;
     }
+}
 
-    $st = null;
-    $pdo = null;
+function activityInfo($userEmail, $activityNo){
+    $pdo = pdoSqlConnect();
 
-    if(sizeof($res) == 1)
-        return $res[0];
-    else if ($res == null)
-        return $res[0];
-    else
-        return $res;
+    $query = "select uS.no as sneakersNo, e.exerciseName as exerciseName, distance, exerciseTime, calorie, averagePace, averageSpeed, maxSpeed, activity.startedAt as startedAt,
+       activity.imageUrl as imageUrl, weather, temperature, facialEmoticon, placeEmoticon, uS.imageUrl as sneakersUrl, uS.nickname as sneakersNickname from activity
+    inner join user u on activity.userNo = u.no and u.email = ? and activity.no = ?
+    inner join exercise e on activity.exerciseType = e.no
+    inner join userSneakers uS on activity.sneakersNo = uS.no;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail, $activityNo]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $query = "select round(initDistance+sum(t.distance), 2) as sneakersDistance
+from (select userSneakers.no as sneakersNo, initDistance, ifnull(a.distance, 0) as distance from userSneakers
+inner join user u on userSneakers.userNo = u.no and u.email = ?
+inner join activity a on userSneakers.no = a.sneakersNo and userSneakers.no = ?) t group by t.sneakersNo;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail, $res[0]['sneakersNo']]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $distance = $st->fetchAll();
+
+    $res[0]['sneakersDistance'] = $distance[0]['sneakersDistance'];
+
+    return $res[0];
 }
 
 function editActivity($activityNo, $startedAt, $sneakersNo, $distance, $exerciseTime, $calorie, $exerciseType, $facialEmoticon, $placeEmoticon, $weather, $temperature, $imageUrl, $memo){
