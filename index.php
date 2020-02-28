@@ -26,6 +26,7 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
 
     $r->addRoute('GET', '/profile/{userNo}', ['IndexController', 'userProfile']);
     $r->addRoute('PUT', '/profile', ['IndexController', 'editProfile']);
+    $r->addRoute('GET', '/profile-tab', ['IndexController', 'profileTab']);
 
     $r->addRoute('GET', '/search/friend', ['IndexController', 'searchFriend']);
     $r->addRoute('GET', '/friend', ['IndexController', 'userFriend']);
@@ -54,19 +55,25 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('PUT', '/activity', ['IndexController', 'editActivity']);
     $r->addRoute('DELETE', '/activity', ['IndexController', 'deleteActivity']);
 
-    #$r->addRoute('GET', '/leaderboard', ['IndexController', 'leaderboard']);
-    #$r->addRoute('GET', '/statistic', ['IndexController', 'statistic']);
-    #$r->addRoute('GET', '/group', ['IndexController', 'userGroup']);
-    #$r->addRoute('POST', '/group', ['IndexController', 'addGroup']);
-    #$r->addRoute('GET', '/progress-status', ['IndexController', 'progressStatus']);
-    #$r->addRoute('GET', '/newsfeed', ['IndexController', 'newsfeed']);
+    $r->addRoute('POST', '/community', ['IndexController', 'addCommunity']);
+    $r->addRoute('PUT', '/community', ['IndexController', 'editCommunity']);
+    $r->addRoute('GET', '/user/community', ['IndexController', 'userCommunity']);
+    $r->addRoute('POST', '/community/request', ['IndexController', 'inviteCommunity']);
+    $r->addRoute('GET', '/community/request', ['IndexController', 'requestedCommunity']);
+    $r->addRoute('DELETE', '/community/request/{type}', ['IndexController', 'acceptOrDenyInvite']);
+    $r->addRoute('DELETE', '/community', ['IndexController', 'exitCommunity']);
+    $r->addRoute('DELETE', '/community/user', ['IndexController', 'kickUser']);
+    $r->addRoute('GET', '/community/{communityNo}', ['IndexController', 'communityInfo']);
+
+    $r->addRoute('GET', '/statistic', ['IndexController', 'statistic']);
+    $r->addRoute('GET', '/leaderboard', ['IndexController', 'leaderboard']);
+
+    $r->addRoute('GET', '/progress-status', ['IndexController', 'progressStatus']);
+    $r->addRoute('GET', '/newsfeed', ['IndexController', 'newsfeed']);
 
 
 
     $r->addRoute('POST', '/upload/{type}', ['IndexController', 'uploadImage']);
-
-    //$r->addRoute('GET', '/profile-tab', ['IndexController', 'profileTab']);
-
 
 //    $r->addRoute('GET', '/users', 'get_all_users_handler');
 //    // {id} must be a number (\d+)

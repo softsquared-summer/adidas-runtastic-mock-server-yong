@@ -212,6 +212,23 @@ function editProfile($profileImage, $lastName, $firstName, $sex, $email, $birth,
     return 100;
 }
 
+function profileTab($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query = "select profileImage, lastName, firstName, createdAt, (select count(*) from friend inner join user u on friend.followingNo = u.no and u.email = ?)+(select count(*) from friend inner join user u on friend.followerNo = u.no and u.email = ?) as friendCnt from user where email = ?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail, $userEmail, $userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return $res[0];
+}
+
 function searchFriend($search){
     $pdo = pdoSqlConnect();
     if(preg_match("/^[_\.0-9a-zA-Z-]+@([0-9a-zA-Z][0-9a-zA-Z-]+\.)+[a-zA-Z]{2,6}$/i", $search)){
@@ -849,4 +866,391 @@ function deleteActivity($userEmail, $activityNo){
     $pdo = null;
 
     return 100;
+}
+
+function addCommunity($userEmail, $communityName, $depict, $imageUrl){
+    $pdo = pdoSqlConnect();
+
+    $query = "insert into community (communityName, depict, imageUrl, master) select ? as communityName, ? as depict, ? as imageUrl, no as master from user where user.email = ?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$communityName, $depict, $imageUrl, $userEmail]);
+
+    $query = "select last_insert_id();";
+    $st = $pdo->prepare($query);
+    $st->execute();
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $index = $st->fetchAll();
+    $index = $index[0]['last_insert_id()'];
+
+    $query = "insert into communityMember (communityNo, userNo) select ? as communityNo, no as userNo from user where email = ?;";
+    $st = $pdo->prepare($query);
+    $st->execute([$index, $userEmail]);
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function editCommunity($userEmail, $communityNo, $communityName, $depict, $imageUrl){
+    $pdo = pdoSqlConnect();
+
+    $query = "update community set communityName = ?, depict = ?, imageUrl = ? where no = ? and master in (select no from user where user.email = ?);";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$communityName, $depict, $imageUrl, $communityNo, $userEmail]);
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function userCommunity($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query  = "select communityNo, communityName, depict, imageUrl, master from (select community.no as communityNo, communityName, depict, imageUrl, master, cM.userNo from community
+    left outer join communityMember cM on community.no = cM.communityNo
+    inner join (select a.communityNo, count(a.communityNo) as userCount from (select community.no as communityNo from community
+    left outer join communityMember cM on community.no = cM.communityNo ) a group by a.communityNo) t on community.no = t.communityNo) ab where ab.master = (select no from user where email = ?) or ab.userNo = (select no from user where email = ?) group by ab.communityNo;";
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail, $userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $query = "select communityNo, count(no) as count from communityMember group by communityNo;";
+    $st = $pdo->prepare($query);
+    $st->execute();
+
+    $rres = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+    for($i = 0 ; $i < sizeof($res); $i++){
+        $temp = 0;
+        for($j = 0; $j < sizeof($rres); $j++){
+            if($res[$i]['communityNo'] == $rres[$j]['communityNo']) {
+                $res[$i]['count'] = $rres[$j]['count'];
+                $temp = 1;
+            }
+        }
+        if($temp == 0)
+            $res[$i]['count'] = 1;
+    }
+
+    return $res;
+}
+
+function inviteCommunity($userEmail, $communityNo, $friendNo){
+    $pdo = pdoSqlConnect();
+    if(isFriend($userEmail, $friendNo)){
+        $query = "insert into communityRequest (communityNo, senderNo, receiverNo) select ? as communityNo, user.no as senderNo, ? as receiverNo
+from user where user.email=?
+            and not exists(select community.no as communityNo, communityName, imageUrl, master from community inner join communityMember cM on community.no = cM.communityNo and (master = ? or userNo = ?))
+            and not exists(select * from communityRequest where receiverNo = ?);";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$communityNo, $friendNo, $userEmail, $friendNo, $friendNo, $friendNo]);
+
+        $st = null;
+        $pdo = null;
+
+        return 100;
+    }else
+        return 200;
+}
+
+function requestedCommunity($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query = "select communityRequest.no as requestNo, communityNo, communityName, imageUrl, lastName, firstname from communityRequest
+    inner join community c on communityRequest.communityNo = c.no
+    inner join user u on communityRequest.senderNo = u.no and receiverNo = (select no from user where email = ?);";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return $res;
+}
+
+function acceptOrDenyInvite($requestNo, $type){
+    $pdo = pdoSqlConnect();
+
+    $query = "select * from communityRequest where no=?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$requestNo]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    if($res == null)
+        return 201;
+
+    if($type == 'accept'){
+        $query = "insert into communityMember (communityNo, userNo) select communityNo, receiverNo from communityRequest where no = ?;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$requestNo]);
+        $code = 100;
+    }else if($type == 'denial'){
+        $code = 101;
+    }else{
+        return 200;
+    }
+
+    $query = "delete from communityRequest where no=?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$requestNo]);
+
+    $st = null;
+    $pdo = null;
+
+    return $code;
+}
+
+function exitCommunity($userEmail, $communityNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "delete from communityMember where communityNo = ? and userNo = (select no from user where email = ?);";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$communityNo, $userEmail]);
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function kickUser($userEmail, $communityNo, $friendNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "delete from communityMember where communityNo = ? and userNo = ? and exists (select master from community inner join user u on u.no = community.master and u.email=?);";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$communityNo, $friendNo, $userEmail]);
+
+    $st = null;
+    $pdo = null;
+
+    return 100;
+}
+
+function communityInfo($userEmail, $communityNo){
+    $pdo = pdoSqlConnect();
+
+    $query = "select c.no as communityNo, communityName, depict, c.imageUrl as communityImageUrl, master, sum(distance) as totalDistance from communityMember
+    inner join user u on communityMember.userNo = u.no
+    inner join activity a on u.no = a.userNo
+    inner join community c on communityMember.communityNo = c.no and c.createdAt <= a.startedAt and communityNo = ? group by communityNo;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$communityNo]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+
+    $query = "select communityMember.userNo, lastName, firstName, profileImage from communityMember
+    inner join user u on communityMember.userNo = u.no and communityNo = ?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$communityNo]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $users = $st->fetchAll();
+
+    $res[0]['users'] = array();
+    foreach($users as $u){
+        array_push($res[0]['users'], $u);
+    }
+
+    $st = null;
+    $pdo = null;
+
+    return $res;
+}
+
+function statistic($userEmail, $exerciseType){
+    $pdo = pdoSqlConnect();
+
+    if($exerciseType == null){
+        $query = "select date, activityCount, totalDistance, concat(totalExerciseTime div 3600, '시간', totalExerciseTime mod 3600 div  60, '분') as totalExerciseTime, totalCalorie from (select activityCreatedAt as date, count(activityNo) as activityCount, sum(distance) as totalDistance, sum(exerciseTime) as totalExerciseTime, sum(calorie) as totalCalorie
+from (select activity.no as activityNo, distance, cast(substr(exerciseTime, 1, 2) as unsigned) * 3600 + cast(substr(exerciseTime, 3, 2) as unsigned) * 60 + cast(substr(exerciseTime, 5, 2) as unsigned) as exerciseTime, calorie, date_format(activity.createdAt, '%Y-%m') as activityCreatedAt from activity
+    inner join user u on activity.userNo = u.no and u.email = ?) t group by t.activityCreatedAt) tt where date = date_format(now(), '%Y-%m') or date = date_format(date_sub(now(), interval 1 month), '%Y-%m') order by date desc;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail]);
+
+        $st->setFetchMode(PDO::FETCH_ASSOC);
+        $res = $st->fetchAll();
+
+        if(sizeof($res) == 0){
+            $res[0]['date'] = date('Y-m');
+            $res[0]['activityCount'] = 0;
+            $res[0]['totalDistance'] = 0;
+            $res[0]['totalExerciseTime'] = 0;
+            $res[0]['totalCalorie'] = 0;
+            $res[1]['date'] = date("Y-m",strtotime ("-1 months"));
+            $res[1]['activityCount'] = 0;
+            $res[1]['totalDistance'] = 0;
+            $res[1]['totalExerciseTime'] = 0;
+            $res[1]['totalCalorie'] = 0;
+        }else if(sizeof($res) == 1){
+            $res[1]['date'] = date("Y-m",strtotime ("-1 months"));
+            $res[1]['activityCount'] = 0;
+            $res[1]['totalDistance'] = 0;
+            $res[1]['totalExerciseTime'] = 0;
+            $res[1]['totalCalorie'] = 0;
+        }
+    }else {
+        $query = "select date, activityCount, totalDistance, concat(totalExerciseTime div 3600, '시간', totalExerciseTime mod 3600 div  60, '분') as totalExerciseTime, totalCalorie from (select activityCreatedAt as date, count(activityNo) as activityCount, sum(distance) as totalDistance, sum(exerciseTime) as totalExerciseTime, sum(calorie) as totalCalorie
+from (select activity.no as activityNo, exerciseType, distance, cast(substr(exerciseTime, 1, 2) as unsigned) * 3600 + cast(substr(exerciseTime, 3, 2) as unsigned) * 60 + cast(substr(exerciseTime, 5, 2) as unsigned) as exerciseTime, calorie, date_format(activity.createdAt, '%Y-%m') as activityCreatedAt from activity
+    inner join user u on activity.userNo = u.no and u.email = ? and exerciseType = ?) t group by t.activityCreatedAt) tt where date = date_format(now(), '%Y-%m') or date = date_format(date_sub(now(), interval 1 month), '%Y-%m') order by date desc;";
+
+        $st = $pdo->prepare($query);
+        $st->execute([$userEmail, $exerciseType]);
+
+        $st->setFetchMode(PDO::FETCH_ASSOC);
+        $res = $st->fetchAll();
+
+        if (sizeof($res) == 0) {
+            $res[0]['date'] = date('Y-m');
+            $res[0]['activityCount'] = 0;
+            $res[0]['totalDistance'] = 0;
+            $res[0]['totalExerciseTime'] = 0;
+            $res[0]['totalCalorie'] = 0;
+            $res[1]['date'] = date("Y-m", strtotime("-1 months"));
+            $res[1]['activityCount'] = 0;
+            $res[1]['totalDistance'] = 0;
+            $res[1]['totalExerciseTime'] = 0;
+            $res[1]['totalCalorie'] = 0;
+        } else if (sizeof($res) == 1) {
+            $res[1]['date'] = date("Y-m", strtotime("-1 months"));
+            $res[1]['activityCount'] = 0;
+            $res[1]['totalDistance'] = 0;
+            $res[1]['totalExerciseTime'] = 0;
+            $res[1]['totalCalorie'] = 0;
+        }
+    }
+
+    return $res;
+}
+
+function leaderboard($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query = "select * from(select no as userNo, firstName, lastName, profileImage, totalDistance from user inner join(select friendNo, sum(distance) as totalDistance from(select friendNo, lastName, firstName, profileImage, ifnull(distance, 0) as distance from
+(select no as friendNo, lastName, firstName, profileImage from user
+inner join (select followingNo as friendNo, followerNo as myNo from friend inner join user u on friend.followerNo = u.no and u.email = ?) a on user.no = a.friendNo
+union
+select no as friendNo, lastName, firstName, profileImage from user
+inner join (select followerNo as friendNo, followingNo as myNo from friend inner join user u on friend.followingNo = u.no and u.email = ?) a on user.no = a.friendNo) t left outer join activity a on a.userNo = t.friendNo) tt group by tt.friendNo)ttt on ttt.friendNo = user.no
+union
+select user.no as userNo, firstName, lastName, profileImage, sum(distance) as totalDistance from user inner join activity a on user.no = a.userNo and user.email = ? group by user.no) tttt order by tttt.totalDistance desc;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail, $userEmail, $userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    return $res;
+}
+
+function progressStatus($userEmail){
+    $pdo = pdoSqlConnect();
+
+    $query = "select activity.no as activityNo, exerciseType, distance,
+       concat(substr(exerciseTime, 1, 2), ':', substr(exerciseTime, 3, 2), ':', substr(exerciseTime, 5, 2)) as exerciseTime,
+       case
+           when date_format(activity.createdAt, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d') then '오늘'
+           when date_format(activity.createdAt, '%Y-%m-%d') = date_format(date_sub(now(), interval 1 day), '%Y-%m-%d') then '어제'
+           else date_format(activity.createdAt, '%Y. %m. %d')
+        end as startedAt
+       from activity inner join user u on u.no = activity.userNo and u.email = ? order by activity.createdAt desc limit 3;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $recentActivity = $st->fetchAll();
+
+    $query = "select distance, concat(exerciseTime div (distance * 60) div 60, ':', exerciseTime div (distance * 60) mod 60) as averagePace, activityCount from (select sum(distance) as distance,
+       sum(cast(substr(exerciseTime, 1, 2) as unsigned) * 3600 + cast(substr(exerciseTime, 3, 2) as unsigned) * 60 + cast(substr(exerciseTime, 5, 2) as unsigned)) as exerciseTime,
+       count(*) as activityCount from activity inner join user u on u.no = activity.userNo and u.email = ?) t;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $query = "select sneakersNo, nickname, imageUrl, round(initDistance+sum(t.distance), 2) as sneakersDistance, limitDistance from (select userSneakers.no as sneakersNo, nickname, userSneakers.imageUrl as imageUrl, initDistance, ifnull(a.distance, 0) as distance, limitDistance from userSneakers
+    inner join user u on u.no = userSneakers.userNo and u.email = ?
+    left outer join activity a on userSneakers.no = a.sneakersNo) t group by t.sneakersNo limit 1;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $sneakers = $st->fetchAll();
+
+    $query = "select date_format(activity.createdAt, '%m') month, count(*) as activityCount from activity inner join user u on u.no = activity.userNo and u.email = ? and activity.createdAt between date_format(concat(date_format(now(), '%Y'), '0101'), '%Y-%m-%d') and date_format(concat(date_format(now(), '%Y'), '1231'), '%Y-%m-%d') group by month;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $month = $st->fetchAll();
+
+    $query = "select userGoal.no as goalNo, termValue,
+       case
+           when termType = 1 then '오늘'
+           when termType = 2 then '이번 주'
+           when termType = 3 then '이번 달'
+           when termType = 4 then '올해'
+           when termType = 5 then concat(concat(concat(concat(substr(termValue, 1, 4), '. '), concat(substr(termValue, 5, 2), '. '))
+               , concat(substr(termValue, 7, 2), '. ')), '까지')
+        end as termName,
+       termType,
+       case
+           when measureType = 1 then concat('목표: ', concat(measureValue, ' km'))
+           when measureType = 2 then concat('목표: ', concat(concat(substr(measureValue, 1, 2), ':'), substr(measureValue, 3, 2)))
+           when measureType = 3 then concat('목표: ', concat(measureValue, ' 회'))
+           end as goalName,
+       measureValue, measureType, exerciseName, exerciseType, isTerminate from userGoal
+    inner join user u on userGoal.userNo = u.no and u.email = ?
+    inner join exercise e on userGoal.exerciseType = e.no limit 2;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$userEmail]);
+
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $goal = $st->fetchAll();
+
+    $res[0]['sneakersNo'] = $sneakers[0]['sneakersNo'];
+    $res[0]['sneakersNickname'] = $sneakers[0]['nickname'];
+    $res[0]['sneakersImageUrl'] = $sneakers[0]['imageUrl'];
+    $res[0]['sneakersDistance'] = $sneakers[0]['sneakersDistance'];
+    $res[0]['limitDistance'] = $sneakers[0]['limitDistance'];
+    $res[0]['recentActivity'] = $recentActivity;
+    $res[0]['monthActivity'] = $month;
+    $res[0]['goal'] = $goal;
+
+    //echo $sneakers[0]['nickname'];
+   // echo json_encode($sneakers, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    return $res;
+
 }
